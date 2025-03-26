@@ -1,6 +1,6 @@
 [![Java CI](https://github.com/temesoft/file-storage/actions/workflows/main.yml/badge.svg)](https://github.com/temesoft/file-storage/actions/workflows/main.yml)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.temesoft.fs/file-storage/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.temesoft.fs/file-storage)
-[![Javadoc](https://javadoc.io/badge2/com.temesoft.fs/file-storage/javadoc.svg)](https://javadoc.io/doc/com.temesoft.fs/file-storage)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.temesoft/file-storage/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.temesoft/file-storage)
+[![Javadoc](https://javadoc.io/badge2/io.github.temesoft/file-storage/javadoc.svg)](https://javadoc.io/doc/io.github.temesoft/file-storage)
 
 
 # file-storage #
