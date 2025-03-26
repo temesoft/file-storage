@@ -5,7 +5,7 @@
 
 # file-storage #
 
-Library providing various file storage functionalities through a single common interface, flexible storage ID and custom path generation
+A file storage library with a simple common interface, flexible IDs, and custom path generation
 
 ### Provided file storage implementations include:
 
