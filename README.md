@@ -35,7 +35,7 @@ Add the dependency to maven pom.xml:
 
 ```xml
 <dependency>
-    <groupId>com.temesoft.fs</groupId>
+    <groupId>io.github.temesoft</groupId>
     <artifactId>file-storage</artifactId>
     <version>1.3</version>
 </dependency>
