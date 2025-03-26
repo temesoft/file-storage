@@ -18,6 +18,9 @@ public class SystemFileStorageServiceImpl implements FileStorageService {
 
     private final Path rootPath;
 
+    /**
+     * Constructor taking {@link Path} as argument to set up system file storage with provided root
+     */
     public SystemFileStorageServiceImpl(final Path rootPath) {
         this.rootPath = rootPath;
         try {

@@ -1,5 +1,7 @@
 package com.temesoft.fs;
 
+import com.github.ksuid.Ksuid;
+
 import java.util.UUID;
 
 /**
@@ -9,6 +11,9 @@ import java.util.UUID;
  */
 public class UUIDFileStorageId extends FileStorageId<UUID> {
 
+    /**
+     * Constructor taking {@link UUID} as argument
+     */
     public UUIDFileStorageId(final UUID value) {
         super(value);
     }

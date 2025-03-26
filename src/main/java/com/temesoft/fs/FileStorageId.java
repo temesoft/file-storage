@@ -9,6 +9,9 @@ public abstract class FileStorageId<T> {
 
     private final T value;
 
+    /**
+     * Base constructor for {@link FileStorageId} taking typed parameter as argument
+     */
     public FileStorageId(final T value) {
         this.value = value;
     }

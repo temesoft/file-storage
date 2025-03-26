@@ -9,6 +9,9 @@ import com.github.ksuid.Ksuid;
  */
 public class KsuidFileStorageId extends FileStorageId<Ksuid> {
 
+    /**
+     * Constructor taking {@link Ksuid} as argument
+     */
     public KsuidFileStorageId(final Ksuid value) {
         super(value);
     }

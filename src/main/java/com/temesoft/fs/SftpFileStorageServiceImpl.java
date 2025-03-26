@@ -12,6 +12,7 @@ import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Properties;
 import java.util.Set;
@@ -29,6 +30,9 @@ public class SftpFileStorageServiceImpl implements FileStorageService {
     final String rootDirectory;
     final Properties configProperties;
 
+    /**
+     * Constructor taking SFTP details as arguments to set up SFTP
+     */
     public SftpFileStorageServiceImpl(final String remoteHost,
                                       final int remotePort,
                                       final String username,

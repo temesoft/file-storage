@@ -18,6 +18,7 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +30,9 @@ public class S3FileStorageServiceImpl implements FileStorageService {
     private final S3Client s3Client;
     private final String bucketName;
 
+    /**
+     * Constructor taking {@link S3Client} and as argument to set up AWS S3 file storage with provided bucket name
+     */
     public S3FileStorageServiceImpl(final S3Client s3Client, final String bucketName) {
         this.s3Client = s3Client;
         this.bucketName = bucketName;
