@@ -38,7 +38,7 @@ Add the dependency to maven pom.xml:
 <dependency>
     <groupId>io.github.temesoft</groupId>
     <artifactId>file-storage</artifactId>
-    <version>1.4</version>
+    <version>1.3</version>
 </dependency>
 ```
 

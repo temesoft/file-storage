@@ -135,12 +135,6 @@
             <version>${hadoop-client.version}</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-minicluster</artifactId>
-            <version>${hadoop-client.version}</version>
-            <scope>provided</scope>
-        </dependency>
 
         <!-- test scope dependencies -->
         <dependency>
@@ -171,6 +165,12 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>localstack</artifactId>
             <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-minicluster</artifactId>
+            <version>${hadoop-client.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
