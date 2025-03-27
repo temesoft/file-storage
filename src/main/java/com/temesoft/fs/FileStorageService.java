@@ -76,7 +76,7 @@ public interface FileStorageService {
      * Returns input stream of file content using provided id
      *
      * @param id - file id
-     * @return - input stread of file content
+     * @return - input stream of file content
      * @throws FileStorageException - thrown when unable to get input stream of file
      */
     InputStream getInputStream(FileStorageId<?> id) throws FileStorageException;
