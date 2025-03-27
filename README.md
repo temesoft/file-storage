@@ -12,6 +12,7 @@ A file storage library with a simple common interface, flexible IDs, and custom 
 - File system storage (using `java.nio`)
 - AWS S3 storage (AWS SDK v2.x)
 - SFTP storage (jsch v0.2.x)
+- HDFS storage (hadoop v3.x)
 - In-memory storage (using `java.util.concurrent.ConcurrentHashMap`)
 
 ------
@@ -37,7 +38,7 @@ Add the dependency to maven pom.xml:
 <dependency>
     <groupId>io.github.temesoft</groupId>
     <artifactId>file-storage</artifactId>
-    <version>1.3</version>
+    <version>1.4</version>
 </dependency>
 ```
 
@@ -75,6 +76,12 @@ FileStorageService fileStorageService = new SftpFileStorageServiceImpl(
         ROOT_DIRECTORY,
         props
 );
+```
+
+
+#### HDFS file storage initialization
+```java
+FileStorageService fileStorageService = new HdfsFileStorageServiceImpl(hdfsFileSystem);
 ```
 
 #### In-memory file storage initialization
