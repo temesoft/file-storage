@@ -52,6 +52,7 @@ class HdfsFileStorageServiceImplTest {
     public void testHdfsFileStorageService() throws IOException {
         assertThatNoException().isThrownBy(() -> fileStorageService.create(STORAGE_FILE_ID, BYTE_CONTENT));
         assertThat(fileStorageService.getBytes(STORAGE_FILE_ID)).isEqualTo(BYTE_CONTENT);
+        assertThat(fileStorageService.getSize(STORAGE_FILE_ID)).isEqualTo(BYTE_CONTENT.length);
         assertThat(fileStorageService.getBytes(STORAGE_FILE_ID, 10, 20))
                 .isEqualTo(Arrays.copyOfRange(BYTE_CONTENT, 10, 20));
         assertThat(IOUtils.toByteArray(fileStorageService.getInputStream(STORAGE_FILE_ID))).isEqualTo(BYTE_CONTENT);

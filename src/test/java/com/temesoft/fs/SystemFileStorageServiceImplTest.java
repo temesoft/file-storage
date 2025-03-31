@@ -43,6 +43,8 @@ class SystemFileStorageServiceImplTest {
     public void testDefaultFileStorageService() throws IOException {
         assertThatNoException().isThrownBy(() -> FILE_STORAGE_SERVICE.create(STORAGE_FILE_ID, BYTE_CONTENT));
         assertThat(FILE_STORAGE_SERVICE.getBytes(STORAGE_FILE_ID)).isEqualTo(BYTE_CONTENT);
+        assertThat(FILE_STORAGE_SERVICE.getSize(STORAGE_FILE_ID)).isEqualTo(BYTE_CONTENT.length);
+
         assertThat(FILE_STORAGE_SERVICE.getBytes(STORAGE_FILE_ID, 10, 20))
                 .isEqualTo(Arrays.copyOfRange(BYTE_CONTENT, 10, 20));
         assertThat(IOUtils.toByteArray(FILE_STORAGE_SERVICE.getInputStream(STORAGE_FILE_ID))).isEqualTo(BYTE_CONTENT);

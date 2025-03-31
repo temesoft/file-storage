@@ -1,5 +1,4 @@
 [![Java CI](https://github.com/temesoft/file-storage/actions/workflows/main.yml/badge.svg)](https://github.com/temesoft/file-storage/actions/workflows/main.yml)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.temesoft/file-storage/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.temesoft/file-storage)
 [![Javadoc](https://javadoc.io/badge2/io.github.temesoft/file-storage/javadoc.svg)](https://javadoc.io/doc/io.github.temesoft/file-storage)
 
 
@@ -38,7 +37,7 @@ Add the dependency to maven pom.xml:
 <dependency>
     <groupId>io.github.temesoft</groupId>
     <artifactId>file-storage</artifactId>
-    <version>1.3</version>
+    <version>1.4</version>
 </dependency>
 ```
 
@@ -130,6 +129,9 @@ boolean fileExists = fileStorageService.exists(storageId);
 
 // Checks by id if file does not exist, and if it does - returns false
 boolean fileDoesNotExist = fileStorageService.doesNotExist(storageId);
+
+// Returns size of file content in bytes using provided id
+long size = fileStorageService.getSize(storageId);
 
 // Creates file using provided id and byte array
 fileStorageService.create(storageId, byteArrayToStore);

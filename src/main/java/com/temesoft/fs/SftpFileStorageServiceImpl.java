@@ -12,7 +12,6 @@ import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Properties;
 import java.util.Set;
@@ -53,6 +52,29 @@ public class SftpFileStorageServiceImpl implements FileStorageService {
             return exists(sftpSession, id);
         } catch (JSchException e) {
             throw new FileStorageException("Unable to verify file stats with ID: " + id, e);
+        }
+    }
+
+    /**
+     * Returns size of file content in bytes using provided id
+     *
+     * @param id - file id
+     * @return - size of file in bytes
+     * @throws FileStorageException - thrown when unable to get size of file
+     */
+    @Override
+    public long getSize(final FileStorageId<?> id) throws FileStorageException {
+        try (final SftpSession sftpSession = new SftpSession()) {
+            if (!exists(sftpSession, id)) {
+                throw new IOException("File does not exist");
+            }
+            final String fileName = getFileName(id.generatePath());
+            final String folderPath = getParentPath(id.generatePath());
+            sftpSession.getChannelSftp().cd(rootDirectory + FileStorageId.SEPARATOR + folderPath);
+            final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            return sftpSession.getChannelSftp().stat(fileName).getSize();
+        } catch (Exception e) {
+            throw new FileStorageException("Unable to get file size with ID: " + id.value(), e);
         }
     }
 
