@@ -1,5 +1,7 @@
 package com.temesoft.fs;
 
+import org.apache.hadoop.fs.Path;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
@@ -35,6 +37,25 @@ public class InMemoryFileStorageServiceImpl implements FileStorageService {
     @Override
     public boolean exists(final FileStorageId<?> id) throws FileStorageException {
         return files.containsKey(id);
+    }
+
+    /**
+     * Returns size of file content in bytes using provided id
+     *
+     * @param id - file id
+     * @return - size of file in bytes
+     * @throws FileStorageException - thrown when unable to get size of file
+     */
+    @Override
+    public long getSize(final FileStorageId<?> id) throws FileStorageException {
+        try {
+            if (doesNotExist(id)) {
+                throw new IOException("File does not exist");
+            }
+            return files.get(id).length;
+        } catch (Exception e) {
+            throw new FileStorageException("Unable to get file size with ID: " + id.value(), e);
+        }
     }
 
     /**

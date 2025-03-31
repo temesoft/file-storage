@@ -42,6 +42,25 @@ public class HdfsFileStorageServiceImpl implements FileStorageService {
     }
 
     /**
+     * Returns size of file content in bytes using provided id
+     *
+     * @param id - file id
+     * @return - size of file in bytes
+     * @throws FileStorageException - thrown when unable to get size of file
+     */
+    @Override
+    public long getSize(final FileStorageId<?> id) throws FileStorageException {
+        try {
+            if (doesNotExist(id)) {
+                throw new IOException("File does not exist");
+            }
+            return hdfs.getFileStatus(new Path(id.generatePath())).getLen();
+        } catch (Exception e) {
+            throw new FileStorageException("Unable to get file size with ID: " + id.value(), e);
+        }
+    }
+
+    /**
      * Creates file using provided id and byte array
      *
      * @param id    - file id

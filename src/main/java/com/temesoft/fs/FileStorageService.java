@@ -26,6 +26,15 @@ public interface FileStorageService {
     }
 
     /**
+     * Returns size of file content in bytes using provided id
+     *
+     * @param id - file id
+     * @return - size of file in bytes
+     * @throws FileStorageException - thrown when unable to get size of file
+     */
+    long getSize(FileStorageId<?> id) throws FileStorageException;
+
+    /**
      * Creates file using provided id and byte array
      *
      * @param id    - file id

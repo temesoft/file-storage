@@ -66,6 +66,7 @@ class SftpFileStorageServiceImplTest {
     public void testSftpFileStorageService() throws IOException {
         assertThatNoException().isThrownBy(() -> fileStorageService.create(STORAGE_FILE_ID, BYTE_CONTENT));
         assertThat(fileStorageService.getBytes(STORAGE_FILE_ID)).isEqualTo(BYTE_CONTENT);
+        assertThat(fileStorageService.getSize(STORAGE_FILE_ID)).isEqualTo(BYTE_CONTENT.length);
 
         assertThatThrownBy(() -> fileStorageService.getBytes(STORAGE_FILE_ID, 10, 20))
                 .isInstanceOf(FileStorageException.class)
