@@ -8,9 +8,9 @@ A file storage library with a simple common interface, flexible IDs, and custom 
 ### Provided file storage implementations include:
 
 - File system storage (using `java.nio`)
-- AWS S3 storage (AWS SDK v2.x)
-- GCP Google Cloud Storage (GCS SDK v2.x)
-- Azure storage (azure-storage-blob v12.x)
+- AWS S3 cloud storage (AWS SDK v2.x)
+- Google cloud storage (GCS SDK v2.x)
+- Azure cloud storage (azure-storage-blob v12.x)
 - SFTP storage (jsch v0.2.x)
 - HDFS storage (hadoop v3.x)
 - In-memory storage (using `java.util.concurrent.ConcurrentHashMap`)
@@ -44,7 +44,7 @@ Add the dependency to maven pom.xml:
 
 -------
 
-## Service initialization
+## Code examples
 
 #### System file storage initialization
 ```java
@@ -160,10 +160,10 @@ Other implementations are also available in addition to public interface to impl
 
 ```java
 // Setup file storage service using in-memory implementation with ksuid type of storage id
-FileStorageService<Ksuid> fileStorageService = new InMemoryFileStorageServiceImpl<>(KsuidFileStorageId::new);
+FileStorageService<UUID> fileStorageService = new InMemoryFileStorageServiceImpl<>(UUIDFileStorageId::new);
 
 // Set storageId to some value
-Ksuid storageId = Ksuid.fromString("1HCpXwx2EK9oYluWbacgeCnFcLf");
+UUID storageId = UUID.fromString("32d18211-9fc4-4876-ac9d-33a6b150205a");
 
 // Checks by id if file exists, and if it does - returns true
 boolean fileExists = fileStorageService.exists(storageId);
