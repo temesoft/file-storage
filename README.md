@@ -1,7 +1,6 @@
 [![Java CI](https://github.com/temesoft/file-storage/actions/workflows/main.yml/badge.svg)](https://github.com/temesoft/file-storage/actions/workflows/main.yml)
 [![Javadoc](https://javadoc.io/badge2/io.github.temesoft/file-storage/javadoc.svg)](https://javadoc.io/doc/io.github.temesoft/file-storage)
 
-
 # file-storage #
 
 A file storage library with a simple common interface, flexible IDs, and custom path generation
@@ -10,6 +9,8 @@ A file storage library with a simple common interface, flexible IDs, and custom 
 
 - File system storage (using `java.nio`)
 - AWS S3 storage (AWS SDK v2.x)
+- GCP Google Cloud Storage (GCS SDK v2.x)
+- Azure storage (azure-storage-blob v12.x)
 - SFTP storage (jsch v0.2.x)
 - HDFS storage (hadoop v3.x)
 - In-memory storage (using `java.util.concurrent.ConcurrentHashMap`)
@@ -37,7 +38,7 @@ Add the dependency to maven pom.xml:
 <dependency>
     <groupId>io.github.temesoft</groupId>
     <artifactId>file-storage</artifactId>
-    <version>1.4</version>
+    <version>1.5</version>
 </dependency>
 ```
 
@@ -47,12 +48,16 @@ Add the dependency to maven pom.xml:
 
 #### System file storage initialization
 ```java
-FileStorageService fileStorageService = new SystemFileStorageServiceImpl("/some/root/path");
+FileStorageService<UUID> fileStorageService = new SystemFileStorageServiceImpl<>(
+        UUIDFileStorageId::new, 
+        "/some/root/path"
+);
 ```
 
 #### AWS S3 file storage initialization
 ```java
-FileStorageService fileStorageService = new S3FileStorageServiceImpl(
+FileStorageService<UUID> fileStorageService = new S3FileStorageServiceImpl<>(
+        UUIDFileStorageId::new,
         S3Client.builder()
             .credentialsProvider(StaticCredentialsProvider.create(
                     AwsBasicCredentials.create(ACCESS_KEY, SECRET_KEY)
@@ -63,11 +68,37 @@ FileStorageService fileStorageService = new S3FileStorageServiceImpl(
 );
 ```
 
+#### Google Cloud Storage initialization
+```java
+FileStorageService<UUID> fileStorageService = new GcsFileStorageServiceImpl<>(
+        UUIDFileStorageId::new,
+        StorageOptions.newBuilder()
+                .setHost("https://storage.googleapis.com")
+                .setProjectId("your-project-id")
+                .setCredentials(ApiKeyCredentials.create("your-key-here"))
+                .build()
+                .getService(), 
+        BUCKET_NAME
+);
+```
+
+#### Azure storage initialization
+```java
+FileStorageService<UUID> fileStorageService = new AzureFileStorageServiceImpl<>(
+        UUIDFileStorageId::new,
+        new BlobServiceClientBuilder()
+                .connectionString(connectionString)
+                .buildClient()
+                .getBlobContainerClient(BUCKET_NAME)
+);
+```
+
 #### SFTP file storage initialization
 ```java
 Properties props = new Properties();
 props.setProperty("StrictHostKeyChecking", "no");
-FileStorageService fileStorageService = new SftpFileStorageServiceImpl(
+FileStorageService<UUID> fileStorageService = new SftpFileStorageServiceImpl<>(
+        UUIDFileStorageId::new,
         SFTP_HOSTNAME,
         SFTP_PORT,
         USERNAME,
@@ -80,12 +111,17 @@ FileStorageService fileStorageService = new SftpFileStorageServiceImpl(
 
 #### HDFS file storage initialization
 ```java
-FileStorageService fileStorageService = new HdfsFileStorageServiceImpl(hdfsFileSystem);
+FileStorageService<UUID> fileStorageService = new HdfsFileStorageServiceImpl<>(
+        UUIDFileStorageId::new, 
+        hdfsFileSystem
+);
 ```
 
 #### In-memory file storage initialization
 ```java
-FileStorageService fileStorageService = new InMemoryFileStorageServiceImpl();
+FileStorageService<UUID> fileStorageService = new InMemoryFileStorageServiceImpl<>(
+        UUIDFileStorageId::new
+);
 ```
 -------
 
@@ -111,18 +147,23 @@ public class BookEntityFileStorageId extends FileStorageId<BookEntity> {
               "/" + bookEntity.getIsbnNumber();
     }
 }
+
+FileStorageService<BookEntity> fileStorageService = new InMemoryFileStorageServiceImpl<>(BookEntityFileStorageId::new);
 ```
 
 -------
 
 ## Storage service usage
-Let's use provided [UUIDFileStorageId](src/main/java/com/temesoft/fs/UUIDFileStorageId.java) and
+Let's use provided [KsuidFileStorageId](src/main/java/com/temesoft/fs/KsuidFileStorageId.java) and
 [InMemoryFileStorageServiceImpl](src/main/java/com/temesoft/fs/InMemoryFileStorageServiceImpl.java) for this example.
 Other implementations are also available in addition to public interface to implement custom ID / storage path setup.
-```java
-FileStorageService fileStorageService = new InMemoryFileStorageServiceImpl();
 
-FileStorageId storageId = new UUIDFileStorageId(someUuid);
+```java
+// Setup file storage service using in-memory implementation with ksuid type of storage id
+FileStorageService<Ksuid> fileStorageService = new InMemoryFileStorageServiceImpl<>(KsuidFileStorageId::new);
+
+// Set storageId to some value
+Ksuid storageId = Ksuid.fromString("1HCpXwx2EK9oYluWbacgeCnFcLf");
 
 // Checks by id if file exists, and if it does - returns true
 boolean fileExists = fileStorageService.exists(storageId);

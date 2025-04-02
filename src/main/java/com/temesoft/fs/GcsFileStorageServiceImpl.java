@@ -1,53 +1,40 @@
 package com.temesoft.fs;
 
-import software.amazon.awssdk.core.pagination.sync.SdkIterable;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.Delete;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
-import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
-import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.S3Object;
+import com.google.cloud.ReadChannel;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.Bucket;
+import com.google.cloud.storage.BucketInfo;
+import com.google.cloud.storage.Storage;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 
 /**
- * Implementation for file storage service using Amazon S3
+ * Implementation for file storage service using Google Cloud Storage
  */
-public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
+public class GcsFileStorageServiceImpl<T> implements FileStorageService<T> {
 
     private final FileStorageIdService<T> fileStorageIdService;
-    private final S3Client s3Client;
-    private final String bucketName;
+    private final Bucket bucket;
 
     /**
-     * Constructor taking {@link FileStorageIdService} and {@link S3Client} and as argument to set up
-     * AWS S3 file storage with provided bucket name
+     * Constructor taking {@link FileStorageIdService} and {@link Storage} as arguments to
+     * set up Google Cloud Storage with existing provided bucket name
      */
-    public S3FileStorageServiceImpl(final FileStorageIdService<T> fileStorageIdService,
-                                    final S3Client s3Client,
-                                    final String bucketName) {
+    public GcsFileStorageServiceImpl(final FileStorageIdService<T> fileStorageIdService,
+                                     final Storage gcsStorage,
+                                     final String bucketName) {
         this.fileStorageIdService = fileStorageIdService;
-        this.s3Client = s3Client;
-        this.bucketName = bucketName;
-    }
-
-    /**
-     * Describes the storage type of implementation
-     */
-    @Override
-    public String getStorageDescription() {
-        return "S3 file storage";
+        Bucket bucketExisting = gcsStorage.get(bucketName);
+        if (bucketExisting != null) {
+            this.bucket = bucketExisting;
+        } else {
+            this.bucket = gcsStorage.create(BucketInfo.newBuilder(bucketName).build());
+        }
     }
 
     /**
@@ -59,17 +46,9 @@ public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
     @Override
     public boolean exists(final T id) throws FileStorageException {
         try {
-            // Create a HeadObjectRequest to check if the object exists
-            final HeadObjectRequest headObjectRequest = HeadObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(fileStorageIdService.fromId(id).generatePath())
-                    .build();
-            s3Client.headObject(headObjectRequest);
-            return true;
-        } catch (NoSuchKeyException e) {
-            return false;
+            return bucket.get(fileStorageIdService.fromId(id).generatePath()).exists();
         } catch (Exception e) {
-            throw new FileStorageException("Unable check existence of file with ID: " + id, e);
+            return false;
         }
     }
 
@@ -86,11 +65,7 @@ public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
             if (doesNotExist(id)) {
                 throw new IOException("File does not exist");
             }
-            final HeadObjectRequest headObjectRequest = HeadObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(fileStorageIdService.fromId(id).generatePath())
-                    .build();
-            return s3Client.headObject(headObjectRequest).contentLength();
+            return bucket.get(fileStorageIdService.fromId(id).generatePath()).getSize();
         } catch (Exception e) {
             throw new FileStorageException("Unable to get file size with ID: " + id, e);
         }
@@ -109,11 +84,7 @@ public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
             if (exists(id)) {
                 throw new IOException("File already exist");
             }
-            final PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(fileStorageIdService.fromId(id).generatePath())
-                    .build();
-            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(bytes));
+            bucket.create(fileStorageIdService.fromId(id).generatePath(), bytes);
         } catch (Exception e) {
             throw new FileStorageException("Unable to create file with ID: " + id, e);
         }
@@ -133,12 +104,7 @@ public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
             if (exists(id)) {
                 throw new IOException("File already exist");
             }
-            final PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(fileStorageIdService.fromId(id).generatePath())
-                    .build();
-
-            s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(inputStream, contentSize));
+            bucket.create(fileStorageIdService.fromId(id).generatePath(), inputStream);
         } catch (Exception e) {
             throw new FileStorageException("Unable to create file with ID: " + id, e);
         }
@@ -156,10 +122,7 @@ public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
             if (doesNotExist(id)) {
                 throw new FileNotFoundException("File not found");
             }
-            s3Client.deleteObject(DeleteObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(fileStorageIdService.fromId(id).generatePath())
-                    .build());
+            bucket.get(fileStorageIdService.fromId(id).generatePath()).delete();
         } catch (Exception e) {
             throw new FileStorageException("Unable to delete file with ID: " + id, e);
         }
@@ -178,11 +141,7 @@ public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
             if (doesNotExist(id)) {
                 throw new FileNotFoundException("File not found");
             }
-            final GetObjectRequest request = GetObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(fileStorageIdService.fromId(id).generatePath())
-                    .build();
-            return s3Client.getObject(request).readAllBytes();
+            return bucket.get(fileStorageIdService.fromId(id).generatePath()).getContent();
         } catch (Exception e) {
             throw new FileStorageException("Unable to get bytes from file with ID: " + id, e);
         }
@@ -203,12 +162,33 @@ public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
             if (doesNotExist(id)) {
                 throw new FileNotFoundException("File not found");
             }
-            final GetObjectRequest request = GetObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(fileStorageIdService.fromId(id).generatePath())
-                    .range("bytes=" + startPosition + "-" + (endPosition - 1))
-                    .build();
-            return s3Client.getObject(request).readAllBytes();
+            final Blob blob = bucket.get(fileStorageIdService.fromId(id).generatePath());
+            final int rangeSize = (int) (endPosition - startPosition);
+
+            // Create a channel to read from the blob
+            try (ReadChannel reader = blob.reader()) {
+                // Set the position to the starting byte
+                reader.seek(startPosition);
+
+                // Prepare buffer to read data
+                final ByteBuffer buffer = ByteBuffer.allocate(Math.min(rangeSize, 1024 * 1024)); // 1MB chunks max
+                final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+                int bytesRemaining = rangeSize;
+                int bytesRead;
+
+                // Read the specified range in chunks
+                while (bytesRemaining > 0 && (bytesRead = reader.read(buffer)) > 0) {
+                    buffer.flip();
+                    final int bytesToWrite = Math.min(bytesRead, bytesRemaining);
+                    outputStream.write(buffer.array(), 0, bytesToWrite);
+
+                    buffer.clear();
+                    bytesRemaining -= bytesToWrite;
+                }
+
+                return outputStream.toByteArray();
+            }
         } catch (Exception e) {
             throw new FileStorageException("Unable to get bytes range from file with ID: " + id, e);
         }
@@ -227,11 +207,7 @@ public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
             if (doesNotExist(id)) {
                 throw new FileNotFoundException("File not found");
             }
-            final GetObjectRequest request = GetObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(fileStorageIdService.fromId(id).generatePath())
-                    .build();
-            return s3Client.getObject(request);
+            return Channels.newInputStream(bucket.get(fileStorageIdService.fromId(id).generatePath()).reader());
         } catch (Exception e) {
             throw new FileStorageException("Unable to get input stream from file with ID: " + id, e);
         }
@@ -245,24 +221,18 @@ public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
     @Override
     public void deleteAll() throws FileStorageException {
         try {
-            final ListObjectsV2Request listObjectsV2Request = ListObjectsV2Request.builder()
-                    .bucket(bucketName)
-                    .build();
-            final SdkIterable<ListObjectsV2Response> listResponses = s3Client.listObjectsV2Paginator(listObjectsV2Request);
-            listResponses.stream().forEach(listObjResponse -> {
-                final List<S3Object> s3Objects = listObjResponse.contents();
-                if (!s3Objects.isEmpty()) {
-                    final List<ObjectIdentifier> objectIdentifiers = new ArrayList<>();
-                    s3Objects.forEach(o -> objectIdentifiers.add(ObjectIdentifier.builder().key(o.key()).build()));
-                    final DeleteObjectsRequest deleteObjectsRequest = DeleteObjectsRequest.builder()
-                            .bucket(bucketName)
-                            .delete(Delete.builder().objects(objectIdentifiers).build())
-                            .build();
-                    s3Client.deleteObjects(deleteObjectsRequest);
-                }
-            });
+            bucket.list().streamAll().forEach(Blob::delete);
+            bucket.delete();
         } catch (Exception e) {
             throw new FileStorageException("Unable to delete all available files", e);
         }
+    }
+
+    /**
+     * Describes the storage type of implementation
+     */
+    @Override
+    public String getStorageDescription() {
+        return "Google Cloud Storage";
     }
 }

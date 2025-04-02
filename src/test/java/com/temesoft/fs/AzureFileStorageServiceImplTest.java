@@ -1,18 +1,20 @@
 package com.temesoft.fs;
 
-import com.github.ksuid.Ksuid;
-import com.google.common.io.Files;
+import com.azure.storage.blob.BlobServiceClient;
+import com.azure.storage.blob.BlobServiceClientBuilder;
 import org.apache.commons.io.IOUtils;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.hdfs.MiniDFSCluster;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.azure.AzuriteContainer;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.UUID;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.lang3.RandomStringUtils.secure;
@@ -20,32 +22,32 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class HdfsFileStorageServiceImplTest {
+@Testcontainers(disabledWithoutDocker = true)
+public class AzureFileStorageServiceImplTest {
 
-    private static final byte[] BYTE_CONTENT = secure().nextAlphanumeric(128).getBytes(UTF_8);
-    private static final Ksuid FILE_ID = Ksuid.newKsuid();
-    private static final KsuidFileStorageId STORAGE_FILE_ID = new KsuidFileStorageId(FILE_ID);
+    private static final byte[] BYTE_CONTENT = secure().nextAlphanumeric(1024).getBytes(UTF_8);
+    private static final UUID FILE_ID = UUID.randomUUID();
+    private static final String CONNECTION_STRING = "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://%s:%d/devstoreaccount1;";
+    private static final String CONTAINER_NAME = "my-container";
+    private static final String DOCKER_IMAGE = "mcr.microsoft.com/azure-storage/azurite";
 
-    private static FileSystem hdfs;
-    private static FileStorageService<Ksuid> fileStorageService;
+    @Container
+    private static final GenericContainer<?> azurite = new AzuriteContainer(DockerImageName.parse(DOCKER_IMAGE))
+            .withExposedPorts(10000);
+
+    private static FileStorageService<UUID> fileStorageService;
 
     @BeforeAll
-    public static void setUp() throws IOException {
-        final Configuration conf = new Configuration();
-        conf.set("dfs.permissions.enabled", "false");
-        final MiniDFSCluster cluster = new MiniDFSCluster.Builder(conf, Files.createTempDir())
-                .manageNameDfsDirs(true)
-                .manageDataDfsDirs(true)
-                .format(true)
-                .build();
-        cluster.waitActive();
-        hdfs = FileSystem.get(conf);
-        fileStorageService = new HdfsFileStorageServiceImpl<>(KsuidFileStorageId::new, hdfs);
-    }
+    public static void setup() {
+        final String connectionString = String.format(CONNECTION_STRING, azurite.getHost(), azurite.getFirstMappedPort());
+        final BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
+                .connectionString(connectionString)
+                .buildClient();
 
-    @AfterAll
-    public static void tearDown() throws IOException {
-        hdfs.close();
+        fileStorageService = new AzureFileStorageServiceImpl<>(
+                UUIDFileStorageId::new,
+                blobServiceClient.getBlobContainerClient(CONTAINER_NAME)
+        );
     }
 
     @Test
@@ -68,10 +70,11 @@ class HdfsFileStorageServiceImplTest {
         assertThatNoException().isThrownBy(() -> fileStorageService.
                 create(FILE_ID, new ByteArrayInputStream(BYTE_CONTENT), BYTE_CONTENT.length));
 
-        assertThatNoException().isThrownBy(fileStorageService::deleteAll);
+        assertThatNoException().isThrownBy(() -> fileStorageService.deleteAll());
         assertThatThrownBy(() -> fileStorageService.getBytes(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
-                .hasMessage("Unable to get bytes from file with ID: %s", FILE_ID);
+                .hasMessage("Unable to get bytes from file with ID: %s", FILE_ID)
+                .hasRootCauseMessage("File not found");
     }
 
     @Test
@@ -79,19 +82,21 @@ class HdfsFileStorageServiceImplTest {
         assertThatThrownBy(() -> fileStorageService.getBytes(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to get bytes from file with ID: %s", FILE_ID)
-                .hasRootCauseMessage("File not found: %s", STORAGE_FILE_ID.generatePath());
+                .hasRootCauseMessage("File not found");
 
         assertThatThrownBy(() -> fileStorageService.getInputStream(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
-                .hasMessage("Unable to get input stream from file with ID: %s", FILE_ID);
+                .hasMessage("Unable to get input stream from file with ID: %s", FILE_ID)
+                .hasRootCauseMessage("File not found");
 
         assertThatThrownBy(() -> fileStorageService.getBytes(FILE_ID, 10, 20))
                 .isInstanceOf(FileStorageException.class)
-                .hasMessage("Unable to get bytes range from file with ID: %s", FILE_ID);
+                .hasMessage("Unable to get bytes range from file with ID: %s", FILE_ID)
+                .hasRootCauseMessage("File not found");
 
         assertThatThrownBy(() -> fileStorageService.delete(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to delete file with ID: %s", FILE_ID)
-                .hasRootCauseMessage("File not found: %s", STORAGE_FILE_ID.generatePath());
+                .hasRootCauseMessage("File not found");
     }
 }

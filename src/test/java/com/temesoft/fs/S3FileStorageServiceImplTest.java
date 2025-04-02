@@ -32,7 +32,6 @@ class S3FileStorageServiceImplTest {
     private static final String BUCKET_NAME = secure().nextAlphanumeric(20).toLowerCase();
     private static final byte[] BYTE_CONTENT = secure().nextAlphanumeric(128).getBytes(UTF_8);
     private static final UUID FILE_ID = UUID.randomUUID();
-    private static final UUIDFileStorageId STORAGE_FILE_ID = new UUIDFileStorageId(FILE_ID);
 
     @Container
     private static final LocalStackContainer localstack = new LocalStackContainer(
@@ -40,7 +39,7 @@ class S3FileStorageServiceImplTest {
             .withServices(S3);
 
     private static S3Client s3Client;
-    private static FileStorageService fileStorageService;
+    private static FileStorageService<UUID> fileStorageService;
 
     @BeforeAll
     public static void setup() {
@@ -58,7 +57,7 @@ class S3FileStorageServiceImplTest {
                 .bucket(BUCKET_NAME)
                 .build());
 
-        fileStorageService = new S3FileStorageServiceImpl(s3Client, BUCKET_NAME);
+        fileStorageService = new S3FileStorageServiceImpl<>(UUIDFileStorageId::new, s3Client, BUCKET_NAME);
     }
 
     @AfterAll
@@ -69,50 +68,50 @@ class S3FileStorageServiceImplTest {
     }
 
     @Test
-    public void testS3FileStorageService() throws IOException {
-        assertThatNoException().isThrownBy(() -> fileStorageService.create(STORAGE_FILE_ID, BYTE_CONTENT));
-        assertThat(fileStorageService.getBytes(STORAGE_FILE_ID)).isEqualTo(BYTE_CONTENT);
-        assertThat(fileStorageService.getSize(STORAGE_FILE_ID)).isEqualTo(BYTE_CONTENT.length);
-        assertThat(fileStorageService.getBytes(STORAGE_FILE_ID, 10, 20))
+    public void testFileStorageService() throws IOException {
+        assertThatNoException().isThrownBy(() -> fileStorageService.create(FILE_ID, BYTE_CONTENT));
+        assertThat(fileStorageService.getBytes(FILE_ID)).isEqualTo(BYTE_CONTENT);
+        assertThat(fileStorageService.getSize(FILE_ID)).isEqualTo(BYTE_CONTENT.length);
+        assertThat(fileStorageService.getBytes(FILE_ID, 10, 20))
                 .isEqualTo(Arrays.copyOfRange(BYTE_CONTENT, 10, 20));
-        assertThat(IOUtils.toByteArray(fileStorageService.getInputStream(STORAGE_FILE_ID))).isEqualTo(BYTE_CONTENT);
+        assertThat(IOUtils.toByteArray(fileStorageService.getInputStream(FILE_ID))).isEqualTo(BYTE_CONTENT);
 
-        assertThatThrownBy(() -> fileStorageService.create(STORAGE_FILE_ID, BYTE_CONTENT))
+        assertThatThrownBy(() -> fileStorageService.create(FILE_ID, BYTE_CONTENT))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to create file with ID: %s", FILE_ID)
                 .hasRootCauseMessage("File already exist");
 
-        assertThatNoException().isThrownBy(() -> fileStorageService.delete(STORAGE_FILE_ID));
+        assertThatNoException().isThrownBy(() -> fileStorageService.delete(FILE_ID));
         assertThat(fileStorageService.getStorageDescription()).isNotEmpty();
 
         assertThatNoException().isThrownBy(() -> fileStorageService.
-                create(STORAGE_FILE_ID, new ByteArrayInputStream(BYTE_CONTENT), BYTE_CONTENT.length));
+                create(FILE_ID, new ByteArrayInputStream(BYTE_CONTENT), BYTE_CONTENT.length));
 
         assertThatNoException().isThrownBy(() -> fileStorageService.deleteAll());
-        assertThatThrownBy(() -> fileStorageService.getBytes(STORAGE_FILE_ID))
+        assertThatThrownBy(() -> fileStorageService.getBytes(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to get bytes from file with ID: %s", FILE_ID)
                 .hasRootCauseMessage("File not found");
     }
 
     @Test
-    public void testS3FileStorageService_Exceptions() {
-        assertThatThrownBy(() -> fileStorageService.getBytes(STORAGE_FILE_ID))
+    public void testFileStorageService_Exceptions() {
+        assertThatThrownBy(() -> fileStorageService.getBytes(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to get bytes from file with ID: %s", FILE_ID)
                 .hasRootCauseMessage("File not found");
 
-        assertThatThrownBy(() -> fileStorageService.getInputStream(STORAGE_FILE_ID))
+        assertThatThrownBy(() -> fileStorageService.getInputStream(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to get input stream from file with ID: %s", FILE_ID)
                 .hasRootCauseMessage("File not found");
 
-        assertThatThrownBy(() -> fileStorageService.getBytes(STORAGE_FILE_ID, 10, 20))
+        assertThatThrownBy(() -> fileStorageService.getBytes(FILE_ID, 10, 20))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to get bytes range from file with ID: %s", FILE_ID)
                 .hasRootCauseMessage("File not found");
 
-        assertThatThrownBy(() -> fileStorageService.delete(STORAGE_FILE_ID))
+        assertThatThrownBy(() -> fileStorageService.delete(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to delete file with ID: %s", FILE_ID)
                 .hasRootCauseMessage("File not found");

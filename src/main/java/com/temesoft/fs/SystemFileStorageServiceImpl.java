@@ -14,14 +14,16 @@ import java.nio.file.attribute.BasicFileAttributes;
 /**
  * Implementation for file storage service using file system (java.nio)
  */
-public class SystemFileStorageServiceImpl implements FileStorageService {
+public class SystemFileStorageServiceImpl<T> implements FileStorageService<T> {
 
+    private final FileStorageIdService<T> fileStorageIdService;
     private final Path rootPath;
 
     /**
-     * Constructor taking {@link Path} as argument to set up system file storage with provided root
+     * Constructor taking {@link FileStorageIdService} and {@link Path} as argument to set up system file storage with provided root
      */
-    public SystemFileStorageServiceImpl(final Path rootPath) {
+    public SystemFileStorageServiceImpl(final FileStorageIdService<T> fileStorageIdService, final Path rootPath) {
+        this.fileStorageIdService = fileStorageIdService;
         this.rootPath = rootPath;
         try {
             Files.createDirectories(rootPath);
@@ -45,8 +47,8 @@ public class SystemFileStorageServiceImpl implements FileStorageService {
      * @throws FileStorageException - thrown when unable to verify file existence
      */
     @Override
-    public boolean exists(final FileStorageId<?> id) throws FileStorageException {
-        return Files.exists(rootPath.resolve(id.generatePath()));
+    public boolean exists(final T id) throws FileStorageException {
+        return Files.exists(rootPath.resolve(fileStorageIdService.fromId(id).generatePath()));
     }
 
     /**
@@ -57,14 +59,14 @@ public class SystemFileStorageServiceImpl implements FileStorageService {
      * @throws FileStorageException - thrown when unable to get size of file
      */
     @Override
-    public long getSize(final FileStorageId<?> id) throws FileStorageException {
+    public long getSize(final T id) throws FileStorageException {
         try {
             if (doesNotExist(id)) {
                 throw new IOException("File does not exist");
             }
-            return Files.size(rootPath.resolve(id.generatePath()));
+            return Files.size(rootPath.resolve(fileStorageIdService.fromId(id).generatePath()));
         } catch (Exception e) {
-            throw new FileStorageException("Unable to get file size with ID: " + id.value(), e);
+            throw new FileStorageException("Unable to get file size with ID: " + id, e);
         }
     }
 
@@ -76,15 +78,16 @@ public class SystemFileStorageServiceImpl implements FileStorageService {
      * @throws FileStorageException - thrown when unable to create file
      */
     @Override
-    public void create(final FileStorageId<?> id, final byte[] bytes) throws FileStorageException {
+    public void create(final T id, final byte[] bytes) throws FileStorageException {
         try {
             if (exists(id)) {
                 throw new IOException("File already exist");
             }
-            Files.createDirectories(rootPath.resolve(id.generatePath()).getParent());
-            Files.write(rootPath.resolve(id.generatePath()), bytes);
+            final Path path = rootPath.resolve(fileStorageIdService.fromId(id).generatePath());
+            Files.createDirectories(path.getParent());
+            Files.write(path, bytes);
         } catch (Exception e) {
-            throw new FileStorageException("Unable to create file with ID: " + id.value(), e);
+            throw new FileStorageException("Unable to create file with ID: " + id, e);
         }
     }
 
@@ -97,15 +100,16 @@ public class SystemFileStorageServiceImpl implements FileStorageService {
      * @throws FileStorageException - thrown when unable to create file
      */
     @Override
-    public void create(final FileStorageId<?> id, final InputStream inputStream, final long contentSize) throws FileStorageException {
+    public void create(final T id, final InputStream inputStream, final long contentSize) throws FileStorageException {
         try (inputStream) {
             if (exists(id)) {
                 throw new IOException("File already exist");
             }
-            Files.createDirectories(rootPath.resolve(id.generatePath()).getParent());
-            Files.copy(inputStream, rootPath.resolve(id.generatePath()));
+            final Path path = rootPath.resolve(fileStorageIdService.fromId(id).generatePath());
+            Files.createDirectories(path.getParent());
+            Files.copy(inputStream, path);
         } catch (Exception e) {
-            throw new FileStorageException("Unable to create file with ID: " + id.value(), e);
+            throw new FileStorageException("Unable to create file with ID: " + id, e);
         }
     }
 
@@ -116,15 +120,15 @@ public class SystemFileStorageServiceImpl implements FileStorageService {
      * @throws FileStorageException - thrown when unable to delete file
      */
     @Override
-    public void delete(final FileStorageId<?> id) throws FileStorageException {
+    public void delete(final T id) throws FileStorageException {
         try {
-            final Path path = rootPath.resolve(id.generatePath());
+            final Path path = rootPath.resolve(fileStorageIdService.fromId(id).generatePath());
             if (doesNotExist(id)) {
                 throw new FileNotFoundException("File not found: " + path);
             }
             Files.delete(path);
         } catch (Exception e) {
-            throw new FileStorageException("Unable to delete file with ID: " + id.value(), e);
+            throw new FileStorageException("Unable to delete file with ID: " + id, e);
         }
     }
 
@@ -136,15 +140,15 @@ public class SystemFileStorageServiceImpl implements FileStorageService {
      * @throws FileStorageException - thrown when unable to get bytes of file
      */
     @Override
-    public byte[] getBytes(final FileStorageId<?> id) throws FileStorageException {
+    public byte[] getBytes(final T id) throws FileStorageException {
         try {
-            final Path path = rootPath.resolve(id.generatePath());
+            final Path path = rootPath.resolve(fileStorageIdService.fromId(id).generatePath());
             if (doesNotExist(id)) {
                 throw new FileNotFoundException("File not found: " + path);
             }
             return Files.readAllBytes(path);
         } catch (Exception e) {
-            throw new FileStorageException("Unable to get bytes from file with ID: " + id.value(), e);
+            throw new FileStorageException("Unable to get bytes from file with ID: " + id, e);
         }
     }
 
@@ -158,20 +162,20 @@ public class SystemFileStorageServiceImpl implements FileStorageService {
      * @throws FileStorageException - thrown when unable to get bytes range of file
      */
     @Override
-    public byte[] getBytes(final FileStorageId<?> id, final int startPosition, final int endPosition) throws FileStorageException {
+    public byte[] getBytes(final T id, final long startPosition, final long endPosition) throws FileStorageException {
         try {
-            final Path path = rootPath.resolve(id.generatePath());
+            final Path path = rootPath.resolve(fileStorageIdService.fromId(id).generatePath());
             if (doesNotExist(id)) {
                 throw new FileNotFoundException("File not found: " + path);
             }
             try (final RandomAccessFile randomAccessFile = new RandomAccessFile(path.toFile(), "r")) {
-                final byte[] buffer = new byte[endPosition - startPosition];
+                final byte[] buffer = new byte[(int) (endPosition - startPosition)];
                 randomAccessFile.seek(startPosition);
                 randomAccessFile.readFully(buffer);
                 return buffer;
             }
         } catch (Exception e) {
-            throw new FileStorageException("Unable to get bytes range from file with ID: " + id.value(), e);
+            throw new FileStorageException("Unable to get bytes range from file with ID: " + id, e);
         }
     }
 
@@ -183,15 +187,15 @@ public class SystemFileStorageServiceImpl implements FileStorageService {
      * @throws FileStorageException - thrown when unable to get input stream of file
      */
     @Override
-    public InputStream getInputStream(final FileStorageId<?> id) throws FileStorageException {
+    public InputStream getInputStream(final T id) throws FileStorageException {
         try {
-            final Path path = rootPath.resolve(id.generatePath());
+            final Path path = rootPath.resolve(fileStorageIdService.fromId(id).generatePath());
             if (doesNotExist(id)) {
                 throw new FileNotFoundException("File not found: " + path);
             }
             return new FileInputStream(path.toFile());
         } catch (Exception e) {
-            throw new FileStorageException("Unable to get input stream from file with ID: " + id.value(), e);
+            throw new FileStorageException("Unable to get input stream from file with ID: " + id, e);
         }
     }
 

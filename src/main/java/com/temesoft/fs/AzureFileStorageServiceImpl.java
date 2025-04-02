@@ -1,53 +1,37 @@
 package com.temesoft.fs;
 
-import software.amazon.awssdk.core.pagination.sync.SdkIterable;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.Delete;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
-import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
-import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.S3Object;
+import com.azure.core.util.BinaryData;
+import com.azure.storage.blob.BlobClient;
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.models.BlobRange;
+import com.azure.storage.blob.options.BlobInputStreamOptions;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
- * Implementation for file storage service using Amazon S3
+ * Implementation for file storage service using Azure storage
  */
-public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
+public class AzureFileStorageServiceImpl<T> implements FileStorageService<T> {
+
+    private static final int BYTE_BUFFER_SIZE = 10_240;
 
     private final FileStorageIdService<T> fileStorageIdService;
-    private final S3Client s3Client;
-    private final String bucketName;
+    private final BlobContainerClient containerClient;
 
     /**
-     * Constructor taking {@link FileStorageIdService} and {@link S3Client} and as argument to set up
-     * AWS S3 file storage with provided bucket name
+     * Constructor taking {@link FileStorageIdService} and {@link BlobContainerClient} as arguments to
+     * set up Azure blob storage
      */
-    public S3FileStorageServiceImpl(final FileStorageIdService<T> fileStorageIdService,
-                                    final S3Client s3Client,
-                                    final String bucketName) {
+    public AzureFileStorageServiceImpl(final FileStorageIdService<T> fileStorageIdService,
+                                       final BlobContainerClient containerClient) {
         this.fileStorageIdService = fileStorageIdService;
-        this.s3Client = s3Client;
-        this.bucketName = bucketName;
-    }
-
-    /**
-     * Describes the storage type of implementation
-     */
-    @Override
-    public String getStorageDescription() {
-        return "S3 file storage";
+        this.containerClient = containerClient;
+        if (!containerClient.exists()) {
+            containerClient.create();
+        }
     }
 
     /**
@@ -59,17 +43,9 @@ public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
     @Override
     public boolean exists(final T id) throws FileStorageException {
         try {
-            // Create a HeadObjectRequest to check if the object exists
-            final HeadObjectRequest headObjectRequest = HeadObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(fileStorageIdService.fromId(id).generatePath())
-                    .build();
-            s3Client.headObject(headObjectRequest);
-            return true;
-        } catch (NoSuchKeyException e) {
-            return false;
+            return containerClient.getBlobClient(fileStorageIdService.fromId(id).generatePath()).exists();
         } catch (Exception e) {
-            throw new FileStorageException("Unable check existence of file with ID: " + id, e);
+            return false;
         }
     }
 
@@ -86,11 +62,7 @@ public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
             if (doesNotExist(id)) {
                 throw new IOException("File does not exist");
             }
-            final HeadObjectRequest headObjectRequest = HeadObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(fileStorageIdService.fromId(id).generatePath())
-                    .build();
-            return s3Client.headObject(headObjectRequest).contentLength();
+            return containerClient.getBlobClient(fileStorageIdService.fromId(id).generatePath()).getProperties().getBlobSize();
         } catch (Exception e) {
             throw new FileStorageException("Unable to get file size with ID: " + id, e);
         }
@@ -109,11 +81,8 @@ public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
             if (exists(id)) {
                 throw new IOException("File already exist");
             }
-            final PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(fileStorageIdService.fromId(id).generatePath())
-                    .build();
-            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(bytes));
+            containerClient.getBlobClient(fileStorageIdService.fromId(id).generatePath())
+                    .upload(BinaryData.fromBytes(bytes));
         } catch (Exception e) {
             throw new FileStorageException("Unable to create file with ID: " + id, e);
         }
@@ -133,12 +102,8 @@ public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
             if (exists(id)) {
                 throw new IOException("File already exist");
             }
-            final PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(fileStorageIdService.fromId(id).generatePath())
-                    .build();
-
-            s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(inputStream, contentSize));
+            containerClient.getBlobClient(fileStorageIdService.fromId(id).generatePath())
+                    .upload(inputStream, contentSize);
         } catch (Exception e) {
             throw new FileStorageException("Unable to create file with ID: " + id, e);
         }
@@ -156,10 +121,8 @@ public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
             if (doesNotExist(id)) {
                 throw new FileNotFoundException("File not found");
             }
-            s3Client.deleteObject(DeleteObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(fileStorageIdService.fromId(id).generatePath())
-                    .build());
+            containerClient.getBlobClient(fileStorageIdService.fromId(id).generatePath())
+                    .delete();
         } catch (Exception e) {
             throw new FileStorageException("Unable to delete file with ID: " + id, e);
         }
@@ -178,11 +141,8 @@ public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
             if (doesNotExist(id)) {
                 throw new FileNotFoundException("File not found");
             }
-            final GetObjectRequest request = GetObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(fileStorageIdService.fromId(id).generatePath())
-                    .build();
-            return s3Client.getObject(request).readAllBytes();
+            return containerClient.getBlobClient(fileStorageIdService.fromId(id).generatePath())
+                    .downloadContent().toBytes();
         } catch (Exception e) {
             throw new FileStorageException("Unable to get bytes from file with ID: " + id, e);
         }
@@ -203,12 +163,20 @@ public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
             if (doesNotExist(id)) {
                 throw new FileNotFoundException("File not found");
             }
-            final GetObjectRequest request = GetObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(fileStorageIdService.fromId(id).generatePath())
-                    .range("bytes=" + startPosition + "-" + (endPosition - 1))
-                    .build();
-            return s3Client.getObject(request).readAllBytes();
+            final BlobClient blobClient = containerClient.getBlobClient(fileStorageIdService.fromId(id).generatePath());
+            final BlobRange blobRange = new BlobRange(startPosition, endPosition - startPosition);
+            final BlobInputStreamOptions options = new BlobInputStreamOptions().setRange(blobRange);
+            try (InputStream inputStream = blobClient.openInputStream(options)) {
+                final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                final byte[] data = new byte[BYTE_BUFFER_SIZE];
+                int nRead;
+                while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+                    buffer.write(data, 0, nRead);
+                }
+
+                buffer.flush();
+                return buffer.toByteArray();
+            }
         } catch (Exception e) {
             throw new FileStorageException("Unable to get bytes range from file with ID: " + id, e);
         }
@@ -227,11 +195,7 @@ public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
             if (doesNotExist(id)) {
                 throw new FileNotFoundException("File not found");
             }
-            final GetObjectRequest request = GetObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(fileStorageIdService.fromId(id).generatePath())
-                    .build();
-            return s3Client.getObject(request);
+            return containerClient.getBlobClient(fileStorageIdService.fromId(id).generatePath()).openInputStream();
         } catch (Exception e) {
             throw new FileStorageException("Unable to get input stream from file with ID: " + id, e);
         }
@@ -245,24 +209,18 @@ public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
     @Override
     public void deleteAll() throws FileStorageException {
         try {
-            final ListObjectsV2Request listObjectsV2Request = ListObjectsV2Request.builder()
-                    .bucket(bucketName)
-                    .build();
-            final SdkIterable<ListObjectsV2Response> listResponses = s3Client.listObjectsV2Paginator(listObjectsV2Request);
-            listResponses.stream().forEach(listObjResponse -> {
-                final List<S3Object> s3Objects = listObjResponse.contents();
-                if (!s3Objects.isEmpty()) {
-                    final List<ObjectIdentifier> objectIdentifiers = new ArrayList<>();
-                    s3Objects.forEach(o -> objectIdentifiers.add(ObjectIdentifier.builder().key(o.key()).build()));
-                    final DeleteObjectsRequest deleteObjectsRequest = DeleteObjectsRequest.builder()
-                            .bucket(bucketName)
-                            .delete(Delete.builder().objects(objectIdentifiers).build())
-                            .build();
-                    s3Client.deleteObjects(deleteObjectsRequest);
-                }
-            });
+            containerClient.delete();
         } catch (Exception e) {
             throw new FileStorageException("Unable to delete all available files", e);
         }
     }
+
+    /**
+     * Describes the storage type of implementation
+     */
+    @Override
+    public String getStorageDescription() {
+        return "Azure Storage";
+    }
 }
+
