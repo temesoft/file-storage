@@ -26,7 +26,6 @@ class SftpFileStorageServiceImplTest {
 
     private static final byte[] BYTE_CONTENT = secure().nextAlphanumeric(128).getBytes(UTF_8);
     private static final Ksuid FILE_ID = Ksuid.newKsuid();
-    private static final KsuidFileStorageId STORAGE_FILE_ID = new KsuidFileStorageId(FILE_ID);
     private static final String DOCKER_IMAGE = "jmcombs/sftp:latest";
     private static final String SFTP_HOST = "localhost";
     private static final int SFTP_PORT = 22;
@@ -40,14 +39,15 @@ class SftpFileStorageServiceImplTest {
             .withCommand(USERNAME + ":" + PASSWORD + ":::" + SFTP_HOME);
 
 
-    private static FileStorageService fileStorageService;
+    private static FileStorageService<Ksuid> fileStorageService;
 
     @BeforeAll
     public static void setup() {
         sftpContainer.start();
         final Properties props = new Properties();
         props.setProperty("StrictHostKeyChecking", "no");
-        fileStorageService = new SftpFileStorageServiceImpl(
+        fileStorageService = new SftpFileStorageServiceImpl<>(
+                KsuidFileStorageId::new,
                 SFTP_HOST,
                 sftpContainer.getMappedPort(SFTP_PORT),
                 USERNAME,
@@ -63,54 +63,63 @@ class SftpFileStorageServiceImplTest {
     }
 
     @Test
-    public void testSftpFileStorageService() throws IOException {
-        assertThatNoException().isThrownBy(() -> fileStorageService.create(STORAGE_FILE_ID, BYTE_CONTENT));
-        assertThat(fileStorageService.getBytes(STORAGE_FILE_ID)).isEqualTo(BYTE_CONTENT);
-        assertThat(fileStorageService.getSize(STORAGE_FILE_ID)).isEqualTo(BYTE_CONTENT.length);
+    public void testFileStorageService() throws IOException {
+        assertThatNoException().isThrownBy(() -> fileStorageService.create(FILE_ID, BYTE_CONTENT));
+        assertThat(fileStorageService.getBytes(FILE_ID)).isEqualTo(BYTE_CONTENT);
+        assertThat(fileStorageService.getSize(FILE_ID)).isEqualTo(BYTE_CONTENT.length);
 
-        assertThatThrownBy(() -> fileStorageService.getBytes(STORAGE_FILE_ID, 10, 20))
+        assertThatThrownBy(() -> fileStorageService.getBytes(FILE_ID, 10, 20))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Method getBytes(...) by range is not implemented");
 
-        assertThat(IOUtils.toByteArray(fileStorageService.getInputStream(STORAGE_FILE_ID))).isEqualTo(BYTE_CONTENT);
+        assertThat(IOUtils.toByteArray(fileStorageService.getInputStream(FILE_ID))).isEqualTo(BYTE_CONTENT);
 
-        assertThatThrownBy(() -> fileStorageService.create(STORAGE_FILE_ID, BYTE_CONTENT))
+        assertThatThrownBy(() -> fileStorageService.create(FILE_ID, BYTE_CONTENT))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to create file with ID: %s", FILE_ID)
                 .hasRootCauseMessage("File already exist");
 
-        assertThatNoException().isThrownBy(() -> fileStorageService.delete(STORAGE_FILE_ID));
+        Assertions.assertThatThrownBy(() -> fileStorageService.create(FILE_ID, new ByteArrayInputStream(BYTE_CONTENT), BYTE_CONTENT.length))
+                .isInstanceOf(FileStorageException.class)
+                .hasMessage("Unable to create file with ID: %s", FILE_ID)
+                .hasRootCauseMessage("File already exist");
+
+        assertThatNoException().isThrownBy(() -> fileStorageService.delete(FILE_ID));
         assertThat(fileStorageService.getStorageDescription()).isNotEmpty();
 
         assertThatNoException().isThrownBy(() -> fileStorageService.
-                create(STORAGE_FILE_ID, new ByteArrayInputStream(BYTE_CONTENT), BYTE_CONTENT.length));
+                create(FILE_ID, new ByteArrayInputStream(BYTE_CONTENT), BYTE_CONTENT.length));
 
         assertThatNoException().isThrownBy(() -> fileStorageService.deleteAll());
-        Assertions.assertThatThrownBy(() -> fileStorageService.getBytes(STORAGE_FILE_ID))
+        Assertions.assertThatThrownBy(() -> fileStorageService.getBytes(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to get bytes from file with ID: %s", FILE_ID)
                 .hasRootCauseMessage("No such file");
+
+        Assertions.assertThatThrownBy(() -> fileStorageService.getSize(FILE_ID))
+                .isInstanceOf(FileStorageException.class)
+                .hasMessage("Unable to get file size with ID: %s", FILE_ID);
     }
 
     @Test
-    public void testSftpFileStorageService_Exceptions() {
-        assertThatThrownBy(() -> fileStorageService.getBytes(STORAGE_FILE_ID))
+    public void testFileStorageService_Exceptions() {
+        assertThatThrownBy(() -> fileStorageService.getBytes(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to get bytes from file with ID: %s", FILE_ID)
                 .hasRootCauseMessage("No such file");
 
-        assertThatThrownBy(() -> fileStorageService.getInputStream(STORAGE_FILE_ID))
+        assertThatThrownBy(() -> fileStorageService.getInputStream(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to get input stream from file with ID: %s", FILE_ID)
                 .hasRootCauseMessage("No such file");
 
-        assertThatThrownBy(() -> fileStorageService.getBytes(STORAGE_FILE_ID, 10, 20))
+        assertThatThrownBy(() -> fileStorageService.getBytes(FILE_ID, 10, 20))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Method getBytes(...) by range is not implemented");
 
-        assertThatThrownBy(() -> fileStorageService.delete(STORAGE_FILE_ID))
+        assertThatThrownBy(() -> fileStorageService.delete(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to delete file with ID: %s", FILE_ID)
-                .hasRootCauseMessage("File not found: %s", STORAGE_FILE_ID);
+                .hasRootCauseMessage("File not found: %s", new KsuidFileStorageId(FILE_ID).generatePath());
     }
 }

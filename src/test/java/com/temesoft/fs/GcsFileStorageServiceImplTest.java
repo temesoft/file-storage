@@ -1,18 +1,16 @@
 package com.temesoft.fs;
 
+import com.google.cloud.NoCredentials;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -24,46 +22,41 @@ import static org.apache.commons.lang3.RandomStringUtils.secure;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
 
 @Testcontainers(disabledWithoutDocker = true)
-class S3FileStorageServiceImplTest {
+class GcsFileStorageServiceImplTest {
 
-    private static final String BUCKET_NAME = secure().nextAlphanumeric(20).toLowerCase();
-    private static final byte[] BYTE_CONTENT = secure().nextAlphanumeric(128).getBytes(UTF_8);
+    private static final byte[] BYTE_CONTENT = secure().nextAlphanumeric(1024).getBytes(UTF_8);
+    private static final String BUCKET = "test-bucket-1";
     private static final UUID FILE_ID = UUID.randomUUID();
+    private static final String DOCKER_IMAGE = "fsouza/fake-gcs-server";
 
     @Container
-    private static final LocalStackContainer localstack = new LocalStackContainer(
-            DockerImageName.parse("localstack/localstack:latest"))
-            .withServices(S3);
+    private static final GenericContainer<?> gcsContainer = new GenericContainer<>(DockerImageName.parse(DOCKER_IMAGE))
+            .withExposedPorts(4443)
+            .withCreateContainerCmdModifier(cmd -> cmd.withEntrypoint(
+                    "/bin/fake-gcs-server",
+                    "-scheme", "http"
+            ));
 
-    private static S3Client s3Client;
+    private static Storage gcsStorage;
     private static FileStorageService<UUID> fileStorageService;
 
     @BeforeAll
     public static void setup() {
-        // Configure S3 client to point to the localstack container
-        s3Client = S3Client.builder()
-                .endpointOverride(localstack.getEndpointOverride(S3))
-                .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(localstack.getAccessKey(), localstack.getSecretKey())
-                ))
-                .region(Region.of(localstack.getRegion()))
-                .build();
-
-        // Create test bucket
-        s3Client.createBucket(CreateBucketRequest.builder()
-                .bucket(BUCKET_NAME)
-                .build());
-
-        fileStorageService = new S3FileStorageServiceImpl<>(UUIDFileStorageId::new, s3Client, BUCKET_NAME);
+        final Storage gcsStorage = StorageOptions.newBuilder()
+                .setHost("http://localhost:" + gcsContainer.getMappedPort(4443))
+                .setProjectId("test-project")
+                .setCredentials(NoCredentials.getInstance())
+                .build()
+                .getService();
+        fileStorageService = new GcsFileStorageServiceImpl<>(UUIDFileStorageId::new, gcsStorage, BUCKET);
     }
 
     @AfterAll
-    public static void cleanup() {
-        if (s3Client != null) {
-            s3Client.close();
+    public static void cleanup() throws Exception {
+        if (gcsStorage != null) {
+            gcsStorage.close();
         }
     }
 
@@ -81,11 +74,6 @@ class S3FileStorageServiceImplTest {
                 .hasMessage("Unable to create file with ID: %s", FILE_ID)
                 .hasRootCauseMessage("File already exist");
 
-        assertThatThrownBy(() -> fileStorageService.create(FILE_ID, new ByteArrayInputStream(BYTE_CONTENT), BYTE_CONTENT.length))
-                .isInstanceOf(FileStorageException.class)
-                .hasMessage("Unable to create file with ID: %s", FILE_ID)
-                .hasRootCauseMessage("File already exist");
-
         assertThatNoException().isThrownBy(() -> fileStorageService.delete(FILE_ID));
         assertThat(fileStorageService.getStorageDescription()).isNotEmpty();
 
@@ -97,10 +85,6 @@ class S3FileStorageServiceImplTest {
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to get bytes from file with ID: %s", FILE_ID)
                 .hasRootCauseMessage("File not found");
-
-        assertThatThrownBy(() -> fileStorageService.getSize(FILE_ID))
-                .isInstanceOf(FileStorageException.class)
-                .hasMessage("Unable to get file size with ID: %s", FILE_ID);
     }
 
     @Test

@@ -13,16 +13,18 @@ import java.io.InputStream;
 /**
  * Implementation for file storage service using Apache HDFS
  */
-public class HdfsFileStorageServiceImpl implements FileStorageService {
+public class HdfsFileStorageServiceImpl<T> implements FileStorageService<T> {
 
     private static final int BYTE_BUFFER_SIZE = 10_240;
 
+    private final FileStorageIdService<T> fileStorageIdService;
     private final FileSystem hdfs;
 
     /**
-     * Constructor taking {@link FileSystem} as argument to set up HDFS file storage
+     * Constructor taking {@link FileStorageIdService} and {@link FileSystem} as argument to set up HDFS file storage
      */
-    public HdfsFileStorageServiceImpl(final FileSystem hdfs) {
+    public HdfsFileStorageServiceImpl(final FileStorageIdService<T> fileStorageIdService, final FileSystem hdfs) {
+        this.fileStorageIdService = fileStorageIdService;
         this.hdfs = hdfs;
     }
 
@@ -33,9 +35,9 @@ public class HdfsFileStorageServiceImpl implements FileStorageService {
      * @throws FileStorageException - thrown when unable to verify file existence
      */
     @Override
-    public boolean exists(final FileStorageId<?> id) throws FileStorageException {
+    public boolean exists(final T id) throws FileStorageException {
         try {
-            return hdfs.exists(new Path(id.generatePath()));
+            return hdfs.exists(new Path(fileStorageIdService.fromId(id).generatePath()));
         } catch (IOException e) {
             throw new FileStorageException("Unable to verify file existence with ID: " + id, e);
         }
@@ -49,14 +51,14 @@ public class HdfsFileStorageServiceImpl implements FileStorageService {
      * @throws FileStorageException - thrown when unable to get size of file
      */
     @Override
-    public long getSize(final FileStorageId<?> id) throws FileStorageException {
+    public long getSize(final T id) throws FileStorageException {
         try {
             if (doesNotExist(id)) {
                 throw new IOException("File does not exist");
             }
-            return hdfs.getFileStatus(new Path(id.generatePath())).getLen();
+            return hdfs.getFileStatus(new Path(fileStorageIdService.fromId(id).generatePath())).getLen();
         } catch (Exception e) {
-            throw new FileStorageException("Unable to get file size with ID: " + id.value(), e);
+            throw new FileStorageException("Unable to get file size with ID: " + id, e);
         }
     }
 
@@ -68,17 +70,17 @@ public class HdfsFileStorageServiceImpl implements FileStorageService {
      * @throws FileStorageException - thrown when unable to create file
      */
     @Override
-    public void create(final FileStorageId<?> id, final byte[] bytes) throws FileStorageException {
+    public void create(final T id, final byte[] bytes) throws FileStorageException {
         try {
             if (exists(id)) {
                 throw new IOException("File already exist");
             }
-            try (FSDataOutputStream outputStream = hdfs.create(new Path(id.generatePath()))) {
+            try (FSDataOutputStream outputStream = hdfs.create(new Path(fileStorageIdService.fromId(id).generatePath()))) {
                 outputStream.write(bytes);
                 outputStream.hflush();
             }
         } catch (Exception e) {
-            throw new FileStorageException("Unable to create file with ID: " + id.value(), e);
+            throw new FileStorageException("Unable to create file with ID: " + id, e);
         }
     }
 
@@ -91,12 +93,12 @@ public class HdfsFileStorageServiceImpl implements FileStorageService {
      * @throws FileStorageException - thrown when unable to create file
      */
     @Override
-    public void create(final FileStorageId<?> id, final InputStream inputStream, final long contentSize) throws FileStorageException {
+    public void create(final T id, final InputStream inputStream, final long contentSize) throws FileStorageException {
         try {
             if (exists(id)) {
                 throw new IOException("File already exist");
             }
-            try (FSDataOutputStream outputStream = hdfs.create(new Path(id.generatePath()))) {
+            try (FSDataOutputStream outputStream = hdfs.create(new Path(fileStorageIdService.fromId(id).generatePath()))) {
                 final byte[] buffer = new byte[BYTE_BUFFER_SIZE];
                 int bytesRead;
                 while ((bytesRead = inputStream.read(buffer)) != -1) {
@@ -105,7 +107,7 @@ public class HdfsFileStorageServiceImpl implements FileStorageService {
                 outputStream.hflush();
             }
         } catch (Exception e) {
-            throw new FileStorageException("Unable to create file with ID: " + id.value(), e);
+            throw new FileStorageException("Unable to create file with ID: " + id, e);
         }
     }
 
@@ -116,14 +118,15 @@ public class HdfsFileStorageServiceImpl implements FileStorageService {
      * @throws FileStorageException - thrown when unable to delete file
      */
     @Override
-    public void delete(final FileStorageId<?> id) throws FileStorageException {
+    public void delete(final T id) throws FileStorageException {
         try {
+            final String path = fileStorageIdService.fromId(id).generatePath();
             if (!exists(id)) {
-                throw new FileNotFoundException("File not found: " + id.generatePath());
+                throw new FileNotFoundException("File not found: " + path);
             }
-            hdfs.delete(new Path(id.generatePath()), false);
+            hdfs.delete(new Path(path), false);
         } catch (Exception e) {
-            throw new FileStorageException("Unable to delete file with ID: " + id.value(), e);
+            throw new FileStorageException("Unable to delete file with ID: " + id, e);
         }
     }
 
@@ -135,16 +138,17 @@ public class HdfsFileStorageServiceImpl implements FileStorageService {
      * @throws FileStorageException - thrown when unable to get bytes of file
      */
     @Override
-    public byte[] getBytes(final FileStorageId<?> id) throws FileStorageException {
+    public byte[] getBytes(final T id) throws FileStorageException {
         try {
+            final String path = fileStorageIdService.fromId(id).generatePath();
             if (!exists(id)) {
-                throw new FileNotFoundException("File not found: " + id.generatePath());
+                throw new FileNotFoundException("File not found: " + path);
             }
-            try (FSDataInputStream inputStream = hdfs.open(new Path(id.generatePath()))) {
+            try (FSDataInputStream inputStream = hdfs.open(new Path(path))) {
                 return IOUtils.toByteArray(inputStream);
             }
         } catch (IOException e) {
-            throw new FileStorageException("Unable to get bytes from file with ID: " + id.value(), e);
+            throw new FileStorageException("Unable to get bytes from file with ID: " + id, e);
         }
     }
 
@@ -158,11 +162,11 @@ public class HdfsFileStorageServiceImpl implements FileStorageService {
      * @throws FileStorageException - thrown when unable to get bytes range of file
      */
     @Override
-    public byte[] getBytes(final FileStorageId<?> id, final int startPosition, final int endPosition) throws FileStorageException {
+    public byte[] getBytes(final T id, final long startPosition, final long endPosition) throws FileStorageException {
         try {
-            try (FSDataInputStream inputStream = hdfs.open(new Path(id.generatePath()))) {
+            try (FSDataInputStream inputStream = hdfs.open(new Path(fileStorageIdService.fromId(id).generatePath()))) {
                 inputStream.seek(startPosition);
-                final int length = endPosition - startPosition;
+                final int length = (int) (endPosition - startPosition);
                 final byte[] buffer = new byte[length];
 
                 // Read the specified number of bytes
@@ -177,7 +181,7 @@ public class HdfsFileStorageServiceImpl implements FileStorageService {
                 return buffer;
             }
         } catch (IOException e) {
-            throw new FileStorageException("Unable to get bytes range from file with ID: " + id.value(), e);
+            throw new FileStorageException("Unable to get bytes range from file with ID: " + id, e);
         }
     }
 
@@ -189,11 +193,11 @@ public class HdfsFileStorageServiceImpl implements FileStorageService {
      * @throws FileStorageException - thrown when unable to get input stream of file
      */
     @Override
-    public InputStream getInputStream(final FileStorageId<?> id) throws FileStorageException {
+    public InputStream getInputStream(final T id) throws FileStorageException {
         try {
-            return hdfs.open(new Path(id.generatePath()));
+            return hdfs.open(new Path(fileStorageIdService.fromId(id).generatePath()));
         } catch (IOException e) {
-            throw new FileStorageException("Unable to get input stream from file with ID: " + id.value(), e);
+            throw new FileStorageException("Unable to get input stream from file with ID: " + id, e);
         }
     }
 

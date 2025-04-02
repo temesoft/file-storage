@@ -5,7 +5,7 @@ import java.io.InputStream;
 /**
  * Interface for file storage service
  */
-public interface FileStorageService {
+public interface FileStorageService<T> {
 
     /**
      * Checks by id if file exists, and if it does - returns true
@@ -13,7 +13,7 @@ public interface FileStorageService {
      * @param id - file id
      * @throws FileStorageException - thrown when unable to verify file existence
      */
-    boolean exists(FileStorageId<?> id) throws FileStorageException;
+    boolean exists(T id) throws FileStorageException;
 
     /**
      * Checks by id if file does not exist, and if it does - returns false
@@ -21,7 +21,7 @@ public interface FileStorageService {
      * @param id - file id
      * @throws FileStorageException - thrown when unable to verify file existence
      */
-    default boolean doesNotExist(FileStorageId<?> id) throws FileStorageException {
+    default boolean doesNotExist(T id) throws FileStorageException {
         return !exists(id);
     }
 
@@ -32,7 +32,7 @@ public interface FileStorageService {
      * @return - size of file in bytes
      * @throws FileStorageException - thrown when unable to get size of file
      */
-    long getSize(FileStorageId<?> id) throws FileStorageException;
+    long getSize(T id) throws FileStorageException;
 
     /**
      * Creates file using provided id and byte array
@@ -41,7 +41,7 @@ public interface FileStorageService {
      * @param bytes - byte array of content
      * @throws FileStorageException - thrown when unable to create file
      */
-    void create(FileStorageId<?> id, byte[] bytes) throws FileStorageException;
+    void create(T id, byte[] bytes) throws FileStorageException;
 
     /**
      * Creates file using provided id and input stream
@@ -51,7 +51,7 @@ public interface FileStorageService {
      * @param contentSize - size of content in bytes
      * @throws FileStorageException - thrown when unable to create file
      */
-    void create(FileStorageId<?> id, InputStream inputStream, long contentSize) throws FileStorageException;
+    void create(T id, InputStream inputStream, long contentSize) throws FileStorageException;
 
     /**
      * Deletes file using provided id
@@ -59,7 +59,7 @@ public interface FileStorageService {
      * @param id - file id
      * @throws FileStorageException - thrown when unable to delete file
      */
-    void delete(FileStorageId<?> id) throws FileStorageException;
+    void delete(T id) throws FileStorageException;
 
     /**
      * Returns byte array of file content using provided id
@@ -68,7 +68,7 @@ public interface FileStorageService {
      * @return - byte array of file content
      * @throws FileStorageException - thrown when unable to get bytes of file
      */
-    byte[] getBytes(FileStorageId<?> id) throws FileStorageException;
+    byte[] getBytes(T id) throws FileStorageException;
 
     /**
      * Returns byte array range of file content using provided id, startPosition and endPosition
@@ -79,7 +79,7 @@ public interface FileStorageService {
      * @return - byte array range of file content
      * @throws FileStorageException - thrown when unable to get bytes range of file
      */
-    byte[] getBytes(FileStorageId<?> id, int startPosition, int endPosition) throws FileStorageException;
+    byte[] getBytes(T id, long startPosition, long endPosition) throws FileStorageException;
 
     /**
      * Returns input stream of file content using provided id
@@ -88,7 +88,7 @@ public interface FileStorageService {
      * @return - input stream of file content
      * @throws FileStorageException - thrown when unable to get input stream of file
      */
-    InputStream getInputStream(FileStorageId<?> id) throws FileStorageException;
+    InputStream getInputStream(T id) throws FileStorageException;
 
     /**
      * Deletes all available files
