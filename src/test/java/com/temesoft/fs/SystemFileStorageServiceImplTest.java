@@ -58,6 +58,11 @@ class SystemFileStorageServiceImplTest {
                 .hasMessage("Unable to create file with ID: %s", FILE_ID)
                 .hasRootCauseMessage("File already exist");
 
+        assertThatThrownBy(() -> FILE_STORAGE_SERVICE.create(FILE_ID, new ByteArrayInputStream(BYTE_CONTENT), BYTE_CONTENT.length))
+                .isInstanceOf(FileStorageException.class)
+                .hasMessage("Unable to create file with ID: %s", FILE_ID)
+                .hasRootCauseMessage("File already exist");
+
         assertThatNoException().isThrownBy(() -> FILE_STORAGE_SERVICE.delete(FILE_ID));
         assertThat(FILE_STORAGE_SERVICE.getStorageDescription()).isNotEmpty();
 
@@ -68,6 +73,10 @@ class SystemFileStorageServiceImplTest {
         assertThatThrownBy(() -> FILE_STORAGE_SERVICE.getBytes(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to get bytes from file with ID: %s", FILE_ID);
+
+        assertThatThrownBy(() -> FILE_STORAGE_SERVICE.getSize(FILE_ID))
+                .isInstanceOf(FileStorageException.class)
+                .hasMessage("Unable to get file size with ID: %s", FILE_ID);
     }
 
     @Test

@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Implementation for file storage service using Azure storage
+ * Implementation for file storage service using Azure cloud storage
  */
 public class AzureFileStorageServiceImpl<T> implements FileStorageService<T> {
 
@@ -45,7 +45,7 @@ public class AzureFileStorageServiceImpl<T> implements FileStorageService<T> {
         try {
             return containerClient.getBlobClient(fileStorageIdService.fromId(id).generatePath()).exists();
         } catch (Exception e) {
-            return false;
+            throw new FileStorageException("Unable check existence of file with ID: " + id, e);
         }
     }
 

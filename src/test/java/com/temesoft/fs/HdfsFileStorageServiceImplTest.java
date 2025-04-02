@@ -1,7 +1,6 @@
 package com.temesoft.fs;
 
 import com.github.ksuid.Ksuid;
-import com.google.common.io.Files;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -12,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -33,7 +33,7 @@ class HdfsFileStorageServiceImplTest {
     public static void setUp() throws IOException {
         final Configuration conf = new Configuration();
         conf.set("dfs.permissions.enabled", "false");
-        final MiniDFSCluster cluster = new MiniDFSCluster.Builder(conf, Files.createTempDir())
+        final MiniDFSCluster cluster = new MiniDFSCluster.Builder(conf, Files.createTempDirectory("mini-dfs-cluster").toFile())
                 .manageNameDfsDirs(true)
                 .manageDataDfsDirs(true)
                 .format(true)
@@ -62,6 +62,11 @@ class HdfsFileStorageServiceImplTest {
                 .hasMessage("Unable to create file with ID: %s", FILE_ID)
                 .hasRootCauseMessage("File already exist");
 
+        assertThatThrownBy(() -> fileStorageService.create(FILE_ID, new ByteArrayInputStream(BYTE_CONTENT), BYTE_CONTENT.length))
+                .isInstanceOf(FileStorageException.class)
+                .hasMessage("Unable to create file with ID: %s", FILE_ID)
+                .hasRootCauseMessage("File already exist");
+
         assertThatNoException().isThrownBy(() -> fileStorageService.delete(FILE_ID));
         assertThat(fileStorageService.getStorageDescription()).isNotEmpty();
 
@@ -72,6 +77,10 @@ class HdfsFileStorageServiceImplTest {
         assertThatThrownBy(() -> fileStorageService.getBytes(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to get bytes from file with ID: %s", FILE_ID);
+
+        assertThatThrownBy(() -> fileStorageService.getSize(FILE_ID))
+                .isInstanceOf(FileStorageException.class)
+                .hasMessage("Unable to get file size with ID: %s", FILE_ID);
     }
 
     @Test

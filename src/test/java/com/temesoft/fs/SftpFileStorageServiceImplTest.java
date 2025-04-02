@@ -79,6 +79,11 @@ class SftpFileStorageServiceImplTest {
                 .hasMessage("Unable to create file with ID: %s", FILE_ID)
                 .hasRootCauseMessage("File already exist");
 
+        Assertions.assertThatThrownBy(() -> fileStorageService.create(FILE_ID, new ByteArrayInputStream(BYTE_CONTENT), BYTE_CONTENT.length))
+                .isInstanceOf(FileStorageException.class)
+                .hasMessage("Unable to create file with ID: %s", FILE_ID)
+                .hasRootCauseMessage("File already exist");
+
         assertThatNoException().isThrownBy(() -> fileStorageService.delete(FILE_ID));
         assertThat(fileStorageService.getStorageDescription()).isNotEmpty();
 
@@ -90,6 +95,10 @@ class SftpFileStorageServiceImplTest {
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to get bytes from file with ID: %s", FILE_ID)
                 .hasRootCauseMessage("No such file");
+
+        Assertions.assertThatThrownBy(() -> fileStorageService.getSize(FILE_ID))
+                .isInstanceOf(FileStorageException.class)
+                .hasMessage("Unable to get file size with ID: %s", FILE_ID);
     }
 
     @Test
