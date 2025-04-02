@@ -9,7 +9,7 @@ A file storage library with a simple common interface, flexible IDs, and custom 
 ### Provided file storage implementations include:
 
 - File system storage (using `java.nio`)
-- AWS S3 cloud storage (AWS SDK v2.x)
+- Amazon AWS S3 storage (AWS SDK v2.x)
 - Google cloud storage (GCS SDK v2.x)
 - Azure cloud storage (azure-storage-blob v12.x)
 - SFTP storage (jsch v0.2.x)
@@ -55,7 +55,7 @@ FileStorageService<UUID> fileStorageService = new SystemFileStorageServiceImpl<>
 );
 ```
 
-#### AWS S3 file storage initialization
+#### Amazon AWS S3 file storage initialization
 ```java
 FileStorageService<UUID> fileStorageService = new S3FileStorageServiceImpl<>(
         UUIDFileStorageId::new,
@@ -69,7 +69,7 @@ FileStorageService<UUID> fileStorageService = new S3FileStorageServiceImpl<>(
 );
 ```
 
-#### Google Cloud Storage initialization
+#### Google cloud storage initialization
 ```java
 FileStorageService<UUID> fileStorageService = new GcsFileStorageServiceImpl<>(
         UUIDFileStorageId::new,
@@ -83,7 +83,7 @@ FileStorageService<UUID> fileStorageService = new GcsFileStorageServiceImpl<>(
 );
 ```
 
-#### Azure storage initialization
+#### Azure cloud storage initialization
 ```java
 FileStorageService<UUID> fileStorageService = new AzureFileStorageServiceImpl<>(
         UUIDFileStorageId::new,
