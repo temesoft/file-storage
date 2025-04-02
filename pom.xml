@@ -38,6 +38,8 @@
         <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>3.2.7</maven-gpg-plugin.version>
+        <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
+        <jacoco-badge-maven-plugin.version>0.1.4</jacoco-badge-maven-plugin.version>
         <central-publishing-maven-plugin.version>0.7.0</central-publishing-maven-plugin.version>
     </properties>
 
@@ -56,6 +58,48 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>default-prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                            <goal>prepare-agent-integration</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>default-report</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>report</goal>
+                            <goal>report-integration</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.sigpwned</groupId>
+                <artifactId>jacoco-badge-maven-plugin</artifactId>
+                <version>${jacoco-badge-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>generate-jacoco-badge</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>badge</goal>
+                        </goals>
+                        <configuration>
+                            <passing>80</passing>
+                            <metric>instruction</metric>
+                            <reportFile>${project.build.directory}/site/jacoco/jacoco.csv</reportFile>
+                            <badgeFile>./jacoco.svg</badgeFile>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
