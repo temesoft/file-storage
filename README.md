@@ -15,6 +15,7 @@ A file storage library with a simple common interface, flexible IDs, and custom 
 - SFTP storage (jsch v0.2.x)
 - HDFS storage (hadoop v3.x)
 - In-memory storage (using `java.util.concurrent.ConcurrentHashMap`)
+- Spring-Boot integration (spring-boot 3.x)
 
 ------
 
@@ -22,6 +23,7 @@ A file storage library with a simple common interface, flexible IDs, and custom 
 - Custom path generator which can be based on your specific id or entity attribute(s)
 - Ability to store and retrieve using `java.io.InputStream` or `byte[]`
 - Ability to retrieve range of file (for possible streaming / HTTP 206 partial content)
+- Spring-boot simple property configuration integration
 - Easy integration interfaces:
   - [FileStorageService.java](src/main/java/com/temesoft/fs/FileStorageService.java)
   - [FileStorageId.java](src/main/java/com/temesoft/fs/FileStorageId.java)
@@ -39,7 +41,7 @@ Add the dependency to maven pom.xml:
 <dependency>
     <groupId>io.github.temesoft</groupId>
     <artifactId>file-storage</artifactId>
-    <version>1.5</version>
+    <version>1.6</version>
 </dependency>
 ```
 
@@ -51,7 +53,7 @@ Add the dependency to maven pom.xml:
 ```java
 FileStorageService<UUID> fileStorageService = new SystemFileStorageServiceImpl<>(
         UUIDFileStorageId::new, 
-        "/some/root/path"
+        Path.of("/some/root/path")
 );
 ```
 
@@ -124,6 +126,77 @@ FileStorageService<UUID> fileStorageService = new InMemoryFileStorageServiceImpl
         UUIDFileStorageId::new
 );
 ```
+
+-------
+
+## Spring-boot usage
+
+File storage service beans can be configured using a simple property interface by using 
+[FileStorageBeanFactoryConfiguration.java](src/main/java/com/temesoft/fs/spring/FileStorageBeanFactoryConfiguration.java).
+Following is a list of possible configuration properties to be used with provided bean factory configuration:
+```properties
+# Enables custom actuator endpoint "file-storage" displaying a list of registered file storage beans
+app.file-storage.actuator-endpoint-enabled=true
+
+app.file-storage.widget-mem.type=InMemory
+app.file-storage.widget-mem.beanQualifier=widgetFileStorage
+app.file-storage.widget-mem.entityClass=org.some.where.Widget
+# idService should implement com.temesoft.fs.FileStorageIdService<Widget>
+app.file-storage.widget-mem.idService=org.some.where.WidgetFileStorageIdService
+
+app.file-storage.trinket-mem.type=InMemory
+app.file-storage.trinket-mem.beanQualifier=trinketFileStorage
+app.file-storage.trinket-mem.entityClass=org.some.where.Trinket
+app.file-storage.trinket-mem.idService=org.some.where.TrinketFileStorageIdService
+
+app.file-storage.trinket-sys.type=System
+app.file-storage.trinket-sys.beanQualifier=trinketSysFileStorage
+app.file-storage.trinket-sys.entityClass=org.some.where.Trinket
+app.file-storage.trinket-sys.idService=org.some.where.TrinketFileStorageIdService
+app.file-storage.trinket-sys.system.rootLocation=/tmp/test-file-storage
+
+app.file-storage.trinket-sftp.type=Sftp
+app.file-storage.trinket-sftp.beanQualifier=trinketSftpFileStorage
+app.file-storage.trinket-sftp.entityClass=org.some.where.Trinket
+app.file-storage.trinket-sftp.idService=org.some.where.TrinketFileStorageIdService
+app.file-storage.trinket-sftp.sftp.remoteHost=127.0.0.1
+app.file-storage.trinket-sftp.sftp.remotePort=12345
+app.file-storage.trinket-sftp.sftp.username=username
+app.file-storage.trinket-sftp.sftp.password=password
+app.file-storage.trinket-sftp.sftp.rootDirectory=/tmp/test-file-storage
+app.file-storage.trinket-sftp.sftp.configProperties=
+
+# S3 integration will require a bean software.amazon.awssdk.services.s3.S3Client
+app.file-storage.trinket-s3.type=S3
+app.file-storage.trinket-s3.entityClass=org.some.where.Trinket
+app.file-storage.trinket-s3.idService=org.some.where.TrinketFileStorageIdService
+app.file-storage.trinket-s3.beanQualifier=trinketS3FileStorage
+app.file-storage.trinket-s3.s3.bucketName=test-bucket
+
+# GCS integration will require a bean com.google.cloud.storage.Storage
+app.file-storage.trinket-gcs.type=GCS
+app.file-storage.trinket-gcs.entityClass=org.some.where.Trinket
+app.file-storage.trinket-gcs.idService=org.some.where.TrinketFileStorageIdService
+app.file-storage.trinket-gcs.beanQualifier=trinketGcsFileStorage
+app.file-storage.trinket-gcs.gcs.bucketName=test-bucket
+
+# Azure integration will require a bean com.azure.storage.blob.BlobContainerClient
+app.file-storage.trinket-azure.type=Azure
+app.file-storage.trinket-azure.beanQualifier=trinketAzureFileStorage
+app.file-storage.trinket-azure.entityClass=org.some.where.Trinket
+app.file-storage.trinket-azure.idService=org.some.where.TrinketFileStorageIdService
+app.file-storage.trinket-azure.azure.bucketName=test-bucket
+
+# HDFS integration will require a bean org.apache.hadoop.fs.FileSystem
+app.file-storage.trinket-hdfs.type=HDFS
+app.file-storage.trinket-hdfs.beanQualifier=trinketHdfsFileStorage
+app.file-storage.trinket-hdfs.entityClass=org.some.where.Trinket
+app.file-storage.trinket-hdfs.idService=org.some.where.TrinketFileStorageIdService
+app.file-storage.trinket-hdfs.azure.bucketName=test-bucket
+
+```
+
+
 -------
 
 ## Custom storage id usage
@@ -155,7 +228,7 @@ FileStorageService<BookEntity> fileStorageService = new InMemoryFileStorageServi
 -------
 
 ## Storage service usage
-Let's use provided [KsuidFileStorageId](src/main/java/com/temesoft/fs/KsuidFileStorageId.java) and
+Let's use provided [UUIDFileStorageId](src/main/java/com/temesoft/fs/UUIDFileStorageId.java) and
 [InMemoryFileStorageServiceImpl](src/main/java/com/temesoft/fs/InMemoryFileStorageServiceImpl.java) for this example.
 Other implementations are also available in addition to public interface to implement custom ID / storage path setup.
 
