@@ -46,7 +46,9 @@ public class FileStorageBeanFactoryConfiguration implements FactoryBean<FileStor
     public static final String ENDPOINT_ID = "file-storage";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileStorageBeanFactoryConfiguration.class);
-    private static final String USAGE_MESSAGE = "For file storage configuration '{}.file-storage.{}.*' an implementation '{}' is being configured for entity '{}' and id service '{}' as bean '{}'";
+    private static final String USAGE_MESSAGE =
+            "For file storage configuration '{}.file-storage.{}.*' an implementation '{}' is being configured " +
+            "for entity '{}' and id service '{}' as bean '{}'";
     private static final String GENERATING_MESSAGE = "Generating {} {} bean(s)";
 
     private static final Map<String, FileStorageService<?>> BEAN_MAP = Maps.newHashMap();
@@ -202,11 +204,6 @@ public class FileStorageBeanFactoryConfiguration implements FactoryBean<FileStor
     @Override
     public Class<?> getObjectType() {
         return FileStorageIdService.class;
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return true;
     }
 
     private final FileStorageIdService<?> genericFileStorageIdService =
