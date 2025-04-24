@@ -25,7 +25,6 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -58,7 +57,6 @@ public class FileStorageBeanFactoryConfiguration implements FactoryBean<FileStor
     private BeanFactory beanFactory;
 
     @Component
-    @ConditionalOnProperty(value = "${app.file-storage.actuator-endpoint-enabled:true}", matchIfMissing = true, havingValue = "true")
     @Endpoint(id = FileStorageBeanFactoryConfiguration.ENDPOINT_ID)
     static class FileStorageEndpointConfiguration {
         /**

@@ -135,9 +135,6 @@ File storage service beans can be configured using a simple property interface b
 [FileStorageBeanFactoryConfiguration.java](src/main/java/com/temesoft/fs/spring/FileStorageBeanFactoryConfiguration.java).
 Following is a list of possible configuration properties to be used with provided bean factory configuration:
 ```properties
-# Enables custom actuator endpoint "file-storage" displaying a list of registered file storage beans
-app.file-storage.actuator-endpoint-enabled=true
-
 app.file-storage.widget-mem.type=InMemory
 app.file-storage.widget-mem.beanQualifier=widgetFileStorage
 app.file-storage.widget-mem.entityClass=org.some.where.Widget
