@@ -73,7 +73,7 @@ public class FileStorageBeanFactoryConfiguration implements FactoryBean<FileStor
         final BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
         BEAN_MAP.clear();
         if (isEmpty(fileStorageProperties.getFileStorage())) {
-            return null;
+            return genericFileStorageIdService;
         }
         LOGGER.info(
                 GENERATING_MESSAGE,
@@ -196,12 +196,7 @@ public class FileStorageBeanFactoryConfiguration implements FactoryBean<FileStor
             }
         });
 
-        return value -> new FileStorageId<>(value) {
-            @Override
-            public String generatePath() {
-                return value.toString();
-            }
-        };
+        return genericFileStorageIdService;
     }
 
     @Override
@@ -214,13 +209,21 @@ public class FileStorageBeanFactoryConfiguration implements FactoryBean<FileStor
         return true;
     }
 
+    private final FileStorageIdService<?> genericFileStorageIdService =
+            value -> new FileStorageId<>(value) {
+                @Override
+                public String generatePath() {
+                    return value.toString();
+                }
+            };
+
     /**
      * This configuration triggers Spring to execute this BeanFactory implementation
      * and pre-create our file storage service beans
      */
     @Configuration
     static class BeanConfigurator {
-        @Autowired
+        @Autowired(required = false)
         private List<FileStorageIdService<?>> services;
     }
 }
