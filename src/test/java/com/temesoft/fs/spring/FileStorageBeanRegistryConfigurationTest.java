@@ -17,9 +17,11 @@ import org.apache.hadoop.fs.FileSystem;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -31,6 +33,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 @TestPropertySource(locations = "classpath:application-fs-test.properties")
+@Import(FileStorageBeanRegistryConfigurationTest.TestConfig.class)
+@EnableAutoConfiguration
 class FileStorageBeanRegistryConfigurationTest extends TestApp {
 
     @Autowired
@@ -89,7 +93,7 @@ class FileStorageBeanRegistryConfigurationTest extends TestApp {
     }
 
     @Configuration
-    static class TestClass {
+    static class TestConfig {
         @Bean
         S3Client mockS3Client() {
             return mock(S3Client.class);

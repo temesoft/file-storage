@@ -135,61 +135,61 @@ File storage service beans can be configured using a simple property interface b
 [FileStorageBeanFactoryConfiguration.java](src/main/java/com/temesoft/fs/spring/FileStorageBeanFactoryConfiguration.java).
 Following is a list of possible configuration properties to be used with provided bean factory configuration:
 ```properties
-app.file-storage.widget-mem.type=InMemory
-app.file-storage.widget-mem.beanQualifier=widgetFileStorage
-app.file-storage.widget-mem.entityClass=org.some.where.Widget
+app.file-storage.instances.instances.widget-mem.type=InMemory
+app.file-storage.instances.instances.widget-mem.bean-qualifier=widgetFileStorage
+app.file-storage.instances.instances.widget-mem.entity-class=org.some.where.Widget
 # idService should implement com.temesoft.fs.FileStorageIdService<Widget>
-app.file-storage.widget-mem.idService=org.some.where.WidgetFileStorageIdService
+app.file-storage.instances.instances.widget-mem.id-service=org.some.where.WidgetFileStorageIdService
 
-app.file-storage.trinket-mem.type=InMemory
-app.file-storage.trinket-mem.beanQualifier=trinketFileStorage
-app.file-storage.trinket-mem.entityClass=org.some.where.Trinket
-app.file-storage.trinket-mem.idService=org.some.where.TrinketFileStorageIdService
+app.file-storage.instances.instances.trinket-mem.type=InMemory
+app.file-storage.instances.instances.trinket-mem.bean-qualifier=trinketFileStorage
+app.file-storage.instances.instances.trinket-mem.entity-class=org.some.where.Trinket
+app.file-storage.instances.instances.trinket-mem.id-service=org.some.where.TrinketFileStorageIdService
 
-app.file-storage.trinket-sys.type=System
-app.file-storage.trinket-sys.beanQualifier=trinketSysFileStorage
-app.file-storage.trinket-sys.entityClass=org.some.where.Trinket
-app.file-storage.trinket-sys.idService=org.some.where.TrinketFileStorageIdService
-app.file-storage.trinket-sys.system.rootLocation=/tmp/test-file-storage
+app.file-storage.instances.instances.trinket-sys.type=System
+app.file-storage.instances.instances.trinket-sys.bean-qualifier=trinketSysFileStorage
+app.file-storage.instances.instances.trinket-sys.entity-class=org.some.where.Trinket
+app.file-storage.instances.trinket-sys.id-service=org.some.where.TrinketFileStorageIdService
+app.file-storage.instances.trinket-sys.system.root-location=/tmp/test-file-storage
 
-app.file-storage.trinket-sftp.type=Sftp
-app.file-storage.trinket-sftp.beanQualifier=trinketSftpFileStorage
-app.file-storage.trinket-sftp.entityClass=org.some.where.Trinket
-app.file-storage.trinket-sftp.idService=org.some.where.TrinketFileStorageIdService
-app.file-storage.trinket-sftp.sftp.remoteHost=127.0.0.1
-app.file-storage.trinket-sftp.sftp.remotePort=12345
-app.file-storage.trinket-sftp.sftp.username=username
-app.file-storage.trinket-sftp.sftp.password=password
-app.file-storage.trinket-sftp.sftp.rootDirectory=/tmp/test-file-storage
-app.file-storage.trinket-sftp.sftp.configProperties=
+app.file-storage.instances.trinket-sftp.type=Sftp
+app.file-storage.instances.trinket-sftp.bean-qualifier=trinketSftpFileStorage
+app.file-storage.instances.trinket-sftp.entity-class=org.some.where.Trinket
+app.file-storage.instances.trinket-sftp.id-service=org.some.where.TrinketFileStorageIdService
+app.file-storage.instances.trinket-sftp.sftp.remote-host=127.0.0.1
+app.file-storage.instances.trinket-sftp.sftp.remote-port=12345
+app.file-storage.instances.trinket-sftp.sftp.username=username
+app.file-storage.instances.trinket-sftp.sftp.password=password
+app.file-storage.instances.trinket-sftp.sftp.root-directory=/tmp/test-file-storage
+app.file-storage.instances.trinket-sftp.sftp.config-properties=
 
 # S3 integration will require a bean software.amazon.awssdk.services.s3.S3Client
-app.file-storage.trinket-s3.type=S3
-app.file-storage.trinket-s3.entityClass=org.some.where.Trinket
-app.file-storage.trinket-s3.idService=org.some.where.TrinketFileStorageIdService
-app.file-storage.trinket-s3.beanQualifier=trinketS3FileStorage
-app.file-storage.trinket-s3.s3.bucketName=test-bucket
+app.file-storage.instances.trinket-s3.type=S3
+app.file-storage.instances.trinket-s3.entity-class=org.some.where.Trinket
+app.file-storage.instances.trinket-s3.id-service=org.some.where.TrinketFileStorageIdService
+app.file-storage.instances.trinket-s3.bean-qualifier=trinketS3FileStorage
+app.file-storage.instances.trinket-s3.s3.bucket-name=test-bucket
 
 # GCS integration will require a bean com.google.cloud.storage.Storage
-app.file-storage.trinket-gcs.type=GCS
-app.file-storage.trinket-gcs.entityClass=org.some.where.Trinket
-app.file-storage.trinket-gcs.idService=org.some.where.TrinketFileStorageIdService
-app.file-storage.trinket-gcs.beanQualifier=trinketGcsFileStorage
-app.file-storage.trinket-gcs.gcs.bucketName=test-bucket
+app.file-storage.instances.trinket-gcs.type=GCS
+app.file-storage.instances.trinket-gcs.entity-class=org.some.where.Trinket
+app.file-storage.instances.trinket-gcs.id-service=org.some.where.TrinketFileStorageIdService
+app.file-storage.instances.trinket-gcs.bean-qualifier=trinketGcsFileStorage
+app.file-storage.instances.trinket-gcs.gcs.bucket-name=test-bucket
 
 # Azure integration will require a bean com.azure.storage.blob.BlobContainerClient
-app.file-storage.trinket-azure.type=Azure
-app.file-storage.trinket-azure.beanQualifier=trinketAzureFileStorage
-app.file-storage.trinket-azure.entityClass=org.some.where.Trinket
-app.file-storage.trinket-azure.idService=org.some.where.TrinketFileStorageIdService
-app.file-storage.trinket-azure.azure.bucketName=test-bucket
+app.file-storage.instances.trinket-azure.type=Azure
+app.file-storage.instances.trinket-azure.bean-qualifier=trinketAzureFileStorage
+app.file-storage.instances.trinket-azure.entity-class=org.some.where.Trinket
+app.file-storage.instances.trinket-azure.id-service=org.some.where.TrinketFileStorageIdService
+app.file-storage.instances.trinket-azure.azure.bucket-name=test-bucket
 
 # HDFS integration will require a bean org.apache.hadoop.fs.FileSystem
-app.file-storage.trinket-hdfs.type=HDFS
-app.file-storage.trinket-hdfs.beanQualifier=trinketHdfsFileStorage
-app.file-storage.trinket-hdfs.entityClass=org.some.where.Trinket
-app.file-storage.trinket-hdfs.idService=org.some.where.TrinketFileStorageIdService
-app.file-storage.trinket-hdfs.azure.bucketName=test-bucket
+app.file-storage.instances.trinket-hdfs.type=HDFS
+app.file-storage.instances.trinket-hdfs.bean-qualifier=trinketHdfsFileStorage
+app.file-storage.instances.trinket-hdfs.entity-class=org.some.where.Trinket
+app.file-storage.instances.trinket-hdfs.id-service=org.some.where.TrinketFileStorageIdService
+app.file-storage.instances.trinket-hdfs.azure.bucket-name=test-bucket
 
 ```
 

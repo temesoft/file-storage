@@ -14,10 +14,11 @@ public class FileStorageBeanRegistryConfigurationNoStoreTest extends TestApp {
 
     @Test
     public void testDisabledFunctionality() {
+        assertThat(context.getBeansOfType(FileStorageBeanRegistryConfiguration.class)).hasSize(1);
         // when no configuration is provided no service beans should exist
         assertThat(context.getBeansOfType(FileStorageService.class)).isEmpty();
         assertThat(context.getBeansOfType(FileStorageProperties.class)).isNotEmpty();
         final FileStorageProperties properties = context.getBean(FileStorageProperties.class);
-        assertThat(properties.getFileStorage()).isEmpty();
+        assertThat(properties.getInstances()).isEmpty();
     }
 }
