@@ -4,7 +4,6 @@ import com.azure.storage.blob.BlobContainerClient;
 import com.google.cloud.storage.Storage;
 import com.google.common.collect.Maps;
 import com.temesoft.fs.AzureFileStorageServiceImpl;
-import com.temesoft.fs.FileStorageId;
 import com.temesoft.fs.FileStorageIdService;
 import com.temesoft.fs.FileStorageService;
 import com.temesoft.fs.GcsFileStorageServiceImpl;
@@ -17,49 +16,55 @@ import org.apache.hadoop.fs.FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AutowireCandidateQualifier;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 
 import static org.springframework.util.ObjectUtils.isEmpty;
 
 /**
- * Configuration class setting up a bean factory approach to creating one or more beans {@link FileStorageService}
+ * Configuration class setting up a bean registry approach to creating one or more beans {@link FileStorageService}
  * specified by configuration defined in {@link FileStorageProperties}.
  */
 @Configuration
-public class FileStorageBeanFactoryConfiguration implements FactoryBean<FileStorageIdService<?>> {
+public class FileStorageBeanRegistryConfiguration {
 
     public static final String ENDPOINT_ID = "file-storage";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(FileStorageBeanFactoryConfiguration.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileStorageBeanRegistryConfiguration.class);
     private static final String USAGE_MESSAGE =
             "For file storage configuration '{}.file-storage.{}.*' an implementation '{}' is being configured " +
             "for entity '{}' and id service '{}' as bean '{}'";
     private static final String GENERATING_MESSAGE = "Generating {} {} bean(s)";
 
-    private static final Map<String, FileStorageService<?>> BEAN_MAP = Maps.newHashMap();
+    private static final Map<String, FileStorageService<?>> BEAN_MAP = Maps.newConcurrentMap();
 
-    @Autowired
-    private FileStorageProperties fileStorageProperties;
-    @Autowired
-    private BeanFactory beanFactory;
+    private final FileStorageProperties fileStorageProperties;
+    private final ApplicationContext context;
+    private final BeanFactory beanFactory;
+
+    public FileStorageBeanRegistryConfiguration(final FileStorageProperties fileStorageProperties,
+                                                final ApplicationContext context,
+                                                final BeanFactory beanFactory) {
+        this.fileStorageProperties = fileStorageProperties;
+        this.context = context;
+        this.beanFactory = beanFactory;
+    }
 
     @Component
-    @Endpoint(id = FileStorageBeanFactoryConfiguration.ENDPOINT_ID)
+    @Endpoint(id = FileStorageBeanRegistryConfiguration.ENDPOINT_ID)
     static class FileStorageEndpointConfiguration {
         /**
          * Endpoint read operation, when enabled - accessible via /actuator/file-storage
@@ -70,12 +75,12 @@ public class FileStorageBeanFactoryConfiguration implements FactoryBean<FileStor
         }
     }
 
-    @Override
-    public FileStorageIdService<?> getObject() {
+    @Bean
+    Map<String, FileStorageService<?>> createFileStorageBeanMap() {
         final BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
         BEAN_MAP.clear();
         if (isEmpty(fileStorageProperties.getFileStorage())) {
-            return genericFileStorageIdService;
+            return BEAN_MAP;
         }
         LOGGER.info(
                 GENERATING_MESSAGE,
@@ -143,7 +148,7 @@ public class FileStorageBeanFactoryConfiguration implements FactoryBean<FileStor
                     beanDefinition.setBeanClass(S3FileStorageServiceImpl.class);
                     final FileStorageService<?> srv = new S3FileStorageServiceImpl<>(
                             (FileStorageIdService<?>) idService.getDeclaredConstructor().newInstance(),
-                            beanFactory.getBean(S3Client.class),
+                            context.getBean(S3Client.class),
                             value.getS3().getBucketName()
                     );
                     beanDefinition.setInstanceSupplier(() -> srv);
@@ -154,7 +159,7 @@ public class FileStorageBeanFactoryConfiguration implements FactoryBean<FileStor
                     beanDefinition.setBeanClass(GcsFileStorageServiceImpl.class);
                     final FileStorageService<?> srv = new GcsFileStorageServiceImpl<>(
                             (FileStorageIdService<?>) idService.getDeclaredConstructor().newInstance(),
-                            beanFactory.getBean(Storage.class),
+                            context.getBean(Storage.class),
                             value.getGcs().getBucketName()
                     );
                     beanDefinition.setInstanceSupplier(() -> srv);
@@ -162,14 +167,14 @@ public class FileStorageBeanFactoryConfiguration implements FactoryBean<FileStor
                     beanDefinition.setBeanClass(AzureFileStorageServiceImpl.class);
                     final FileStorageService<?> srv = new AzureFileStorageServiceImpl<>(
                             (FileStorageIdService<?>) idService.getDeclaredConstructor().newInstance(),
-                            beanFactory.getBean(BlobContainerClient.class)
+                            context.getBean(BlobContainerClient.class)
                     );
                     beanDefinition.setInstanceSupplier(() -> srv);
                 } else if (value.getType() == FileStorageProperties.FileStorageOption.HDFS) {
                     beanDefinition.setBeanClass(HdfsFileStorageServiceImpl.class);
                     final FileStorageService<?> srv = new HdfsFileStorageServiceImpl<>(
                             (FileStorageIdService<?>) idService.getDeclaredConstructor().newInstance(),
-                            beanFactory.getBean(FileSystem.class)
+                            context.getBean(FileSystem.class)
                     );
                     beanDefinition.setInstanceSupplier(() -> srv);
                 } else {
@@ -197,30 +202,6 @@ public class FileStorageBeanFactoryConfiguration implements FactoryBean<FileStor
                 throw new RuntimeException(e);
             }
         });
-
-        return genericFileStorageIdService;
-    }
-
-    @Override
-    public Class<?> getObjectType() {
-        return FileStorageIdService.class;
-    }
-
-    private final FileStorageIdService<?> genericFileStorageIdService =
-            value -> new FileStorageId<>(value) {
-                @Override
-                public String generatePath() {
-                    return value.toString();
-                }
-            };
-
-    /**
-     * This configuration triggers Spring to execute this BeanFactory method `getObject(...)`
-     * and pre-create our service beans {@link FileStorageService} instead ;-)
-     */
-    @Configuration
-    static class BeanConfigurator {
-        @Autowired(required = false)
-        private List<FileStorageIdService<?>> services;
+        return BEAN_MAP;
     }
 }

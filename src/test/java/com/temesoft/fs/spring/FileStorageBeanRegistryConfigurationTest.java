@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 @TestPropertySource(locations = "classpath:application-fs-test.properties")
-class FileStorageBeanFactoryConfigurationTest extends TestApp {
+class FileStorageBeanRegistryConfigurationTest extends TestApp {
 
     @Autowired
     private List<FileStorageService<?>> fileStorageServiceList;

@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * Config properties holding setup details for file storage system (see: {@link FileStorageBeanFactoryConfiguration}).
+ * Config properties holding setup details for file storage system (see: {@link FileStorageBeanRegistryConfiguration}).
  * Below is an example of possible configurations:
  * <br/>
  * <pre>

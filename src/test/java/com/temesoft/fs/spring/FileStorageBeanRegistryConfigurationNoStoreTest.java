@@ -7,7 +7,7 @@ import org.springframework.context.ApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class FileStorageBeanFactoryConfigurationNoStoreTest extends TestApp {
+public class FileStorageBeanRegistryConfigurationNoStoreTest extends TestApp {
 
     @Autowired
     private ApplicationContext context;
