@@ -215,8 +215,8 @@ public class FileStorageBeanFactoryConfiguration implements FactoryBean<FileStor
             };
 
     /**
-     * This configuration triggers Spring to execute this BeanFactory implementation
-     * and pre-create our file storage service beans
+     * This configuration triggers Spring to execute this BeanFactory method `getObject(...)`
+     * and pre-create our service beans {@link FileStorageService} instead ;-)
      */
     @Configuration
     static class BeanConfigurator {
