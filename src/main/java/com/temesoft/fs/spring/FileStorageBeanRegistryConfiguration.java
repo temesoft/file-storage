@@ -188,7 +188,7 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                                                 final String key) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (isEmpty(config.getSystem().getRootLocation())) {
             throw new IllegalStateException("Missing configuration for system root location: " +
-                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + ".system.root-location");
+                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "system.root-location");
         }
         beanDefinition.setBeanClass(SystemFileStorageServiceImpl.class);
         final FileStorageService<?> srv = new SystemFileStorageServiceImpl<>(
@@ -207,19 +207,19 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                                               final String key) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (isEmpty(config.getSftp().getRemoteHost())) {
             throw new IllegalStateException("Missing configuration for sftp remote host: " +
-                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + ".sftp.remote-host");
+                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.remote-host");
         } else if (isEmpty(config.getSftp().getRemotePort())) {
             throw new IllegalStateException("Missing configuration for sftp remote port: " +
-                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + ".sftp.remote-port");
+                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.remote-port");
         } else if (isEmpty(config.getSftp().getUsername())) {
             throw new IllegalStateException("Missing configuration for sftp username: " +
-                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + ".sftp.username");
+                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.username");
         } else if (isEmpty(config.getSftp().getPassword())) {
             throw new IllegalStateException("Missing configuration for sftp password: " +
-                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + ".sftp.password");
+                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.password");
         } else if (isEmpty(config.getSftp().getRootDirectory())) {
             throw new IllegalStateException("Missing configuration for sftp root directory: " +
-                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + ".sftp.root-directory");
+                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.root-directory");
         }
         beanDefinition.setBeanClass(SftpFileStorageServiceImpl.class);
         final FileStorageService<?> srv = new SftpFileStorageServiceImpl<>(
@@ -243,7 +243,7 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                                             final String key) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (isEmpty(config.getS3().getBucketName())) {
             throw new IllegalStateException("Missing configuration for S3 bucket name: " +
-                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + ".s3.bucket-name");
+                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "s3.bucket-name");
         }
         beanDefinition.setBeanClass(S3FileStorageServiceImpl.class);
         final FileStorageService<?> srv = new S3FileStorageServiceImpl<>(
@@ -263,7 +263,7 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                                              final String key) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (isEmpty(config.getGcs().getBucketName())) {
             throw new IllegalStateException("Missing configuration for GCS bucket name: " +
-                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + ".gcs.bucket-name");
+                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "gcs.bucket-name");
         }
         beanDefinition.setBeanClass(GcsFileStorageServiceImpl.class);
         final FileStorageService<?> srv = new GcsFileStorageServiceImpl<>(
