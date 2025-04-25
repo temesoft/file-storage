@@ -108,10 +108,10 @@ public class FileStorageProperties {
         private FileStorageOption type;
         private String beanQualifier;
 
-        private SystemFileStorageProperties system;
-        private SftpFileStorageProperties sftp;
-        private S3FileStorageProperties s3;
-        private GcsFileStorageProperties gcs;
+        private SystemFileStorageProperties system = new SystemFileStorageProperties();
+        private SftpFileStorageProperties sftp = new SftpFileStorageProperties();
+        private S3FileStorageProperties s3 = new S3FileStorageProperties();
+        private GcsFileStorageProperties gcs = new GcsFileStorageProperties();
 
         public String getEntityClass() {
             return entityClass;
