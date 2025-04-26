@@ -9,6 +9,7 @@ import com.temesoft.fs.FileStorageService;
 import com.temesoft.fs.GcsFileStorageServiceImpl;
 import com.temesoft.fs.HdfsFileStorageServiceImpl;
 import com.temesoft.fs.InMemoryFileStorageServiceImpl;
+import com.temesoft.fs.LoggingFileStorageServiceWrapper;
 import com.temesoft.fs.S3FileStorageServiceImpl;
 import com.temesoft.fs.SftpFileStorageServiceImpl;
 import com.temesoft.fs.SystemFileStorageServiceImpl;
@@ -63,32 +64,32 @@ class FileStorageBeanRegistryConfigurationTest extends TestApp {
         assertThat(fileStorageServiceList)
                 .isNotEmpty().hasSize(8);
 
-        assertThat(widgetFileStorage)
+        assertThat(widgetFileStorage).isInstanceOf(LoggingFileStorageServiceWrapper.class);
+        assertThat(((LoggingFileStorageServiceWrapper<?>)widgetFileStorage).getService())
                 .isInstanceOf(InMemoryFileStorageServiceImpl.class);
 
-        assertThat(context.getBean("widgetFileStorage", FileStorageService.class))
-                .isEqualTo(widgetFileStorage)
+        assertThat(context.getBean("widgetFileStorage", LoggingFileStorageServiceWrapper.class).getService())
                 .isInstanceOf(InMemoryFileStorageServiceImpl.class);
 
-        assertThat(context.getBean("trinketFileStorage", FileStorageService.class))
+        assertThat(context.getBean("trinketFileStorage", LoggingFileStorageServiceWrapper.class).getService())
                 .isInstanceOf(InMemoryFileStorageServiceImpl.class);
 
-        assertThat(context.getBean("trinketSysFileStorage", FileStorageService.class))
+        assertThat(context.getBean("trinketSysFileStorage", LoggingFileStorageServiceWrapper.class).getService())
                 .isInstanceOf(SystemFileStorageServiceImpl.class);
 
-        assertThat(context.getBean("trinketSftpFileStorage", FileStorageService.class))
+        assertThat(context.getBean("trinketSftpFileStorage", LoggingFileStorageServiceWrapper.class).getService())
                 .isInstanceOf(SftpFileStorageServiceImpl.class);
 
-        assertThat(context.getBean("trinketS3FileStorage", FileStorageService.class))
+        assertThat(context.getBean("trinketS3FileStorage", LoggingFileStorageServiceWrapper.class).getService())
                 .isInstanceOf(S3FileStorageServiceImpl.class);
 
-        assertThat(context.getBean("trinketGcsFileStorage", FileStorageService.class))
+        assertThat(context.getBean("trinketGcsFileStorage", LoggingFileStorageServiceWrapper.class).getService())
                 .isInstanceOf(GcsFileStorageServiceImpl.class);
 
-        assertThat(context.getBean("trinketAzureFileStorage", FileStorageService.class))
+        assertThat(context.getBean("trinketAzureFileStorage", LoggingFileStorageServiceWrapper.class).getService())
                 .isInstanceOf(AzureFileStorageServiceImpl.class);
 
-        assertThat(context.getBean("trinketHdfsFileStorage", FileStorageService.class))
+        assertThat(context.getBean("trinketHdfsFileStorage", LoggingFileStorageServiceWrapper.class).getService())
                 .isInstanceOf(HdfsFileStorageServiceImpl.class);
     }
 

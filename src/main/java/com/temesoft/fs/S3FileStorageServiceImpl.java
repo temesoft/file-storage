@@ -265,4 +265,12 @@ public class S3FileStorageServiceImpl<T> implements FileStorageService<T> {
             throw new FileStorageException("Unable to delete all available files", e);
         }
     }
+
+    /**
+     * Returns id service used in this file storage service
+     */
+    @Override
+    public FileStorageIdService<T> getFileStorageIdService() {
+        return fileStorageIdService;
+    }
 }

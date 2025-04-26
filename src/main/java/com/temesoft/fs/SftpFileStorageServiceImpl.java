@@ -191,6 +191,14 @@ public class SftpFileStorageServiceImpl<T> implements FileStorageService<T> {
     }
 
     /**
+     * Returns id service used in this file storage service
+     */
+    @Override
+    public FileStorageIdService<T> getFileStorageIdService() {
+        return fileStorageIdService;
+    }
+
+    /**
      * Removes all directories and files within them recursively
      */
     private void recursiveDelete(final ChannelSftp sftp, final String path) throws SftpException {

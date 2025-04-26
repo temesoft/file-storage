@@ -222,5 +222,13 @@ public class AzureFileStorageServiceImpl<T> implements FileStorageService<T> {
     public String getStorageDescription() {
         return "Azure Storage";
     }
+
+    /**
+     * Returns id service used in this file storage service
+     */
+    @Override
+    public FileStorageIdService<T> getFileStorageIdService() {
+        return fileStorageIdService;
+    }
 }
 

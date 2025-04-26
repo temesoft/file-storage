@@ -2,21 +2,21 @@ package com.temesoft.fs.spring;
 
 import com.azure.storage.blob.BlobContainerClient;
 import com.google.cloud.storage.Storage;
-import com.google.common.collect.Maps;
 import com.temesoft.fs.AzureFileStorageServiceImpl;
 import com.temesoft.fs.FileStorageIdService;
 import com.temesoft.fs.FileStorageService;
 import com.temesoft.fs.GcsFileStorageServiceImpl;
 import com.temesoft.fs.HdfsFileStorageServiceImpl;
 import com.temesoft.fs.InMemoryFileStorageServiceImpl;
+import com.temesoft.fs.LoggingFileStorageServiceWrapper;
 import com.temesoft.fs.S3FileStorageServiceImpl;
 import com.temesoft.fs.SftpFileStorageServiceImpl;
 import com.temesoft.fs.SystemFileStorageServiceImpl;
+import com.temesoft.fs.spring.FileStorageProperties.FileStorageOption;
 import org.apache.hadoop.fs.FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AutowireCandidateQualifier;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
@@ -30,8 +30,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -40,6 +38,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.Map;
 
+import static com.temesoft.fs.spring.FileStorageProperties.PREFIX;
+import static org.springframework.beans.factory.config.BeanDefinition.SCOPE_SINGLETON;
 import static org.springframework.util.ObjectUtils.isEmpty;
 
 /**
@@ -47,19 +47,15 @@ import static org.springframework.util.ObjectUtils.isEmpty;
  * specified by configuration defined in {@link FileStorageProperties}.
  */
 @Configuration
-@Order(Ordered.HIGHEST_PRECEDENCE)
 public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegistryPostProcessor, EnvironmentAware, ApplicationContextAware {
 
-    public static final String ENDPOINT_ID = "file-storage";
-
     private static final Logger LOGGER = LoggerFactory.getLogger(FileStorageBeanRegistryConfiguration.class);
+    public static final String ENDPOINT_ID = "file-storage";
     private static final String USAGE_MESSAGE =
-            "For file storage configuration '{}.instances.{}.*' an implementation '{}' is being configured " +
+            "Processing file storage configuration '{}.instances.{}.*' into implementation '{}' setup " +
             "for entity '{}' and id service '{}' as bean '{}'";
     private static final String GENERATING_MESSAGE = "Generating {} {} bean(s)";
     private static final String PROPERTY_NAME_PORTION = ".instances.%s.";
-
-    private static final Map<String, FileStorageService<?>> BEAN_MAP = Maps.newConcurrentMap();
 
     private ApplicationContext context;
     private Environment environment;
@@ -74,16 +70,36 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
         this.context = ctx;
     }
 
+    /**
+     * Registers custom actuator endpoint describing file storage beans registered.
+     * Can be disabled using configuration property: `app.file-storage.endpoint-enabled=false`
+     */
+    @Component
+    @ConditionalOnProperty(value = "${" + PREFIX + ".endpoint-enabled:true}", matchIfMissing = true, havingValue = "true")
+    @Endpoint(id = FileStorageBeanRegistryConfiguration.ENDPOINT_ID)
+    public static class FileStorageEndpoint {
+
+        private ApplicationContext context;
+
+        /**
+         * Endpoint read operation, when enabled - accessible via /actuator/file-storage
+         */
+        @ReadOperation
+        @SuppressWarnings("rawtypes")
+        public Map<String, FileStorageService> viewRegisteredFileStorages() {
+            return context.getBeansOfType(FileStorageService.class);
+        }
+    }
+
     @Override
     public void postProcessBeanDefinitionRegistry(final BeanDefinitionRegistry registry) throws BeansException {
         final FileStorageProperties fileStorageProperties = Binder.get(environment)
-                .bind(FileStorageProperties.PREFIX, Bindable.of(FileStorageProperties.class))
+                .bind(PREFIX, Bindable.of(FileStorageProperties.class))
                 .orElse(new FileStorageProperties());
         if (isEmpty(fileStorageProperties.getInstances())) {
             return;
         }
 
-        BEAN_MAP.clear();
         LOGGER.info(
                 GENERATING_MESSAGE,
                 fileStorageProperties.getInstances().size(),
@@ -91,55 +107,50 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
         );
         fileStorageProperties.getInstances().forEach((key, config) -> {
             final GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
-            beanDefinition.setScope(BeanDefinition.SCOPE_SINGLETON);
+            beanDefinition.setScope(SCOPE_SINGLETON);
             try {
                 if (config.getType() == null) {
                     throw new IllegalStateException("Missing configuration for storage type: " +
-                                                    FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "type");
+                                                    PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "type");
                 } else if (isEmpty(config.getEntityClass())) {
                     throw new IllegalStateException("Missing configuration for entity class: " +
-                                                    FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "entity-class");
+                                                    PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "entity-class");
                 } else if (isEmpty(config.getIdService())) {
                     throw new IllegalStateException("Missing configuration for id service: " +
-                                                    FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "id-service");
+                                                    PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "id-service");
                 } else if (isEmpty(config.getBeanQualifier())) {
                     throw new IllegalStateException("Missing configuration for bean qualifier: " +
-                                                    FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "bean-qualifier");
+                                                    PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "bean-qualifier");
                 }
                 final Class<?> idService = Class.forName(config.getIdService());
                 final Class<?> entityClass = Class.forName(config.getEntityClass());
 
-                if (config.getType() == FileStorageProperties.FileStorageOption.InMemory) {
+                if (config.getType() == FileStorageOption.InMemory) {
                     createFileStorageServiceInMemory(beanDefinition, idService);
-                } else if (config.getType() == FileStorageProperties.FileStorageOption.System) {
+                } else if (config.getType() == FileStorageOption.System) {
                     createFileStorageServiceSystem(beanDefinition, idService, config, key);
-                } else if (config.getType() == FileStorageProperties.FileStorageOption.Sftp) {
+                } else if (config.getType() == FileStorageOption.Sftp) {
                     createFileStorageServiceSftp(beanDefinition, idService, config, key);
-                } else if (config.getType() == FileStorageProperties.FileStorageOption.S3) {
+                } else if (config.getType() == FileStorageOption.S3) {
                     createFileStorageServiceS3(beanDefinition, idService, config, key);
-                } else if (config.getType() == FileStorageProperties.FileStorageOption.GCS) {
+                } else if (config.getType() == FileStorageOption.GCS) {
                     createFileStorageServiceGcs(beanDefinition, idService, config, key);
-                } else if (config.getType() == FileStorageProperties.FileStorageOption.Azure) {
+                } else if (config.getType() == FileStorageOption.Azure) {
                     createFileStorageServiceAzure(beanDefinition, idService);
-                } else if (config.getType() == FileStorageProperties.FileStorageOption.HDFS) {
+                } else if (config.getType() == FileStorageOption.HDFS) {
                     createFileStorageServiceHdfs(beanDefinition, idService);
                 } else {
                     throw new IllegalStateException("Not configured to create storage of this type: " + config.getType());
                 }
 
                 LOGGER.debug(USAGE_MESSAGE,
-                        FileStorageProperties.PREFIX,
+                        PREFIX,
                         key,
                         beanDefinition.getBeanClass().getSimpleName(),
                         entityClass.getSimpleName(),
                         idService.getSimpleName(),
                         config.getBeanQualifier()
                 );
-
-                if (beanDefinition.getInstanceSupplier() != null
-                    && beanDefinition.getInstanceSupplier().get() != null) {
-                    BEAN_MAP.put(config.getBeanQualifier(), (FileStorageService<?>) beanDefinition.getInstanceSupplier().get());
-                }
 
                 beanDefinition.addQualifier(new AutowireCandidateQualifier(config.getBeanQualifier()));
                 registry.registerBeanDefinition(config.getBeanQualifier(), beanDefinition);
@@ -151,31 +162,14 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
     }
 
     /**
-     * Registers custom actuator endpoint describing file storage beans registered.
-     * Can be disabled using configuration property: `app.file-storage.endpoint-enabled=false`
-     */
-    @Component
-    @ConditionalOnProperty(value = "${" + FileStorageProperties.PREFIX + ".endpoint-enabled:true}", matchIfMissing = true, havingValue = "true")
-    @Endpoint(id = FileStorageBeanRegistryConfiguration.ENDPOINT_ID)
-    static class FileStorageEndpointConfiguration {
-        /**
-         * Endpoint read operation, when enabled - accessible via /actuator/file-storage
-         */
-        @ReadOperation
-        public Map<String, FileStorageService<?>> viewFileStorages() {
-            return BEAN_MAP;
-        }
-    }
-
-    /**
      * Generates file storage service for InMemory based on provided config and idService
      */
     private void createFileStorageServiceInMemory(final GenericBeanDefinition beanDefinition,
                                                   final Class<?> idService) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         beanDefinition.setBeanClass(InMemoryFileStorageServiceImpl.class);
-        final FileStorageService<?> srv = new InMemoryFileStorageServiceImpl<>(
+        final FileStorageService<?> srv = new LoggingFileStorageServiceWrapper<>(new InMemoryFileStorageServiceImpl<>(
                 (FileStorageIdService<?>) idService.getDeclaredConstructor().newInstance()
-        );
+        ));
         beanDefinition.setInstanceSupplier(() -> srv);
     }
 
@@ -188,13 +182,13 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                                                 final String key) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (isEmpty(config.getSystem().getRootLocation())) {
             throw new IllegalStateException("Missing configuration for system root location: " +
-                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "system.root-location");
+                                            PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "system.root-location");
         }
         beanDefinition.setBeanClass(SystemFileStorageServiceImpl.class);
-        final FileStorageService<?> srv = new SystemFileStorageServiceImpl<>(
+        final FileStorageService<?> srv = new LoggingFileStorageServiceWrapper<>(new SystemFileStorageServiceImpl<>(
                 (FileStorageIdService<?>) idService.getDeclaredConstructor().newInstance(),
                 Path.of(config.getSystem().getRootLocation())
-        );
+        ));
         beanDefinition.setInstanceSupplier(() -> srv);
     }
 
@@ -207,22 +201,22 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                                               final String key) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (isEmpty(config.getSftp().getRemoteHost())) {
             throw new IllegalStateException("Missing configuration for sftp remote host: " +
-                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.remote-host");
+                                            PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.remote-host");
         } else if (isEmpty(config.getSftp().getRemotePort())) {
             throw new IllegalStateException("Missing configuration for sftp remote port: " +
-                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.remote-port");
+                                            PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.remote-port");
         } else if (isEmpty(config.getSftp().getUsername())) {
             throw new IllegalStateException("Missing configuration for sftp username: " +
-                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.username");
+                                            PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.username");
         } else if (isEmpty(config.getSftp().getPassword())) {
             throw new IllegalStateException("Missing configuration for sftp password: " +
-                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.password");
+                                            PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.password");
         } else if (isEmpty(config.getSftp().getRootDirectory())) {
             throw new IllegalStateException("Missing configuration for sftp root directory: " +
-                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.root-directory");
+                                            PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.root-directory");
         }
         beanDefinition.setBeanClass(SftpFileStorageServiceImpl.class);
-        final FileStorageService<?> srv = new SftpFileStorageServiceImpl<>(
+        final FileStorageService<?> srv = new LoggingFileStorageServiceWrapper<>(new SftpFileStorageServiceImpl<>(
                 (FileStorageIdService<?>) idService.getDeclaredConstructor().newInstance(),
                 config.getSftp().getRemoteHost(),
                 config.getSftp().getRemotePort(),
@@ -230,7 +224,7 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                 config.getSftp().getPassword(),
                 config.getSftp().getRootDirectory(),
                 config.getSftp().getConfigProperties()
-        );
+        ));
         beanDefinition.setInstanceSupplier(() -> srv);
     }
 
@@ -243,14 +237,14 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                                             final String key) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (isEmpty(config.getS3().getBucketName())) {
             throw new IllegalStateException("Missing configuration for S3 bucket name: " +
-                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "s3.bucket-name");
+                                            PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "s3.bucket-name");
         }
         beanDefinition.setBeanClass(S3FileStorageServiceImpl.class);
-        final FileStorageService<?> srv = new S3FileStorageServiceImpl<>(
+        final FileStorageService<?> srv = new LoggingFileStorageServiceWrapper<>(new S3FileStorageServiceImpl<>(
                 (FileStorageIdService<?>) idService.getDeclaredConstructor().newInstance(),
                 context.getBean(S3Client.class),
                 config.getS3().getBucketName()
-        );
+        ));
         beanDefinition.setInstanceSupplier(() -> srv);
     }
 
@@ -263,14 +257,14 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                                              final String key) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (isEmpty(config.getGcs().getBucketName())) {
             throw new IllegalStateException("Missing configuration for GCS bucket name: " +
-                                            FileStorageProperties.PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "gcs.bucket-name");
+                                            PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "gcs.bucket-name");
         }
         beanDefinition.setBeanClass(GcsFileStorageServiceImpl.class);
-        final FileStorageService<?> srv = new GcsFileStorageServiceImpl<>(
+        final FileStorageService<?> srv = new LoggingFileStorageServiceWrapper<>(new GcsFileStorageServiceImpl<>(
                 (FileStorageIdService<?>) idService.getDeclaredConstructor().newInstance(),
                 context.getBean(Storage.class),
                 config.getGcs().getBucketName()
-        );
+        ));
         beanDefinition.setInstanceSupplier(() -> srv);
     }
 
@@ -280,10 +274,10 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
     private void createFileStorageServiceAzure(final GenericBeanDefinition beanDefinition,
                                                final Class<?> idService) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         beanDefinition.setBeanClass(AzureFileStorageServiceImpl.class);
-        final FileStorageService<?> srv = new AzureFileStorageServiceImpl<>(
+        final FileStorageService<?> srv = new LoggingFileStorageServiceWrapper<>(new AzureFileStorageServiceImpl<>(
                 (FileStorageIdService<?>) idService.getDeclaredConstructor().newInstance(),
                 context.getBean(BlobContainerClient.class)
-        );
+        ));
         beanDefinition.setInstanceSupplier(() -> srv);
     }
 
@@ -293,10 +287,10 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
     private void createFileStorageServiceHdfs(final GenericBeanDefinition beanDefinition,
                                               final Class<?> idService) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         beanDefinition.setBeanClass(HdfsFileStorageServiceImpl.class);
-        final FileStorageService<?> srv = new HdfsFileStorageServiceImpl<>(
+        final FileStorageService<?> srv = new LoggingFileStorageServiceWrapper<>(new HdfsFileStorageServiceImpl<>(
                 (FileStorageIdService<?>) idService.getDeclaredConstructor().newInstance(),
                 context.getBean(FileSystem.class)
-        );
+        ));
         beanDefinition.setInstanceSupplier(() -> srv);
     }
 }

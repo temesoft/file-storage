@@ -46,7 +46,7 @@ class SftpFileStorageServiceImplTest {
         sftpContainer.start();
         final Properties props = new Properties();
         props.setProperty("StrictHostKeyChecking", "no");
-        fileStorageService = new SftpFileStorageServiceImpl<>(
+        fileStorageService = new LoggingFileStorageServiceWrapper<>(new SftpFileStorageServiceImpl<>(
                 KsuidFileStorageId::new,
                 SFTP_HOST,
                 sftpContainer.getMappedPort(SFTP_PORT),
@@ -54,7 +54,7 @@ class SftpFileStorageServiceImplTest {
                 PASSWORD,
                 SFTP_HOME,
                 props
-        );
+        ));
     }
 
     @AfterAll

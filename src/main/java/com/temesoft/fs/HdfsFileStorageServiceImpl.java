@@ -222,4 +222,12 @@ public class HdfsFileStorageServiceImpl<T> implements FileStorageService<T> {
     public String getStorageDescription() {
         return "HDFS storage";
     }
+
+    /**
+     * Returns id service used in this file storage service
+     */
+    @Override
+    public FileStorageIdService<T> getFileStorageIdService() {
+        return fileStorageIdService;
+    }
 }

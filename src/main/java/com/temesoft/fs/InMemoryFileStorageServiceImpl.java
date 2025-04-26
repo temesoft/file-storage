@@ -194,4 +194,12 @@ public class InMemoryFileStorageServiceImpl<T> implements FileStorageService<T> 
     public void deleteAll() {
         files.clear();
     }
+
+    /**
+     * Returns id service used in this file storage service
+     */
+    @Override
+    public FileStorageIdService<T> getFileStorageIdService() {
+        return fileStorageIdService;
+    }
 }

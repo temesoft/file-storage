@@ -102,4 +102,9 @@ public interface FileStorageService<T> {
      */
     String getStorageDescription();
 
+    /**
+     * Returns id service used in this file storage service
+     */
+    FileStorageIdService<T> getFileStorageIdService();
+
 }

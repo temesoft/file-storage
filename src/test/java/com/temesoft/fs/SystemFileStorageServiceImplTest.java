@@ -27,12 +27,8 @@ class SystemFileStorageServiceImplTest {
     static {
         try {
             ROOT_PATH = Files.createTempDirectory(SystemFileStorageServiceImplTest.class.getName());
-            FILE_STORAGE_SERVICE = new SystemFileStorageServiceImpl<>(new FileStorageIdService<UUID>() {
-                @Override
-                public FileStorageId<UUID> fromId(final UUID value) {
-                    return new UUIDFileStorageId(value);
-                }
-            }, ROOT_PATH);
+            FILE_STORAGE_SERVICE = new LoggingFileStorageServiceWrapper<>(
+                    new SystemFileStorageServiceImpl<>(UUIDFileStorageId::new, ROOT_PATH));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -57,7 +57,8 @@ class S3FileStorageServiceImplTest {
                 .bucket(BUCKET_NAME)
                 .build());
 
-        fileStorageService = new S3FileStorageServiceImpl<>(UUIDFileStorageId::new, s3Client, BUCKET_NAME);
+        fileStorageService = new LoggingFileStorageServiceWrapper<>(
+                new S3FileStorageServiceImpl<>(UUIDFileStorageId::new, s3Client, BUCKET_NAME));
     }
 
     @AfterAll

@@ -235,4 +235,12 @@ public class GcsFileStorageServiceImpl<T> implements FileStorageService<T> {
     public String getStorageDescription() {
         return "Google Cloud Storage";
     }
+
+    /**
+     * Returns id service used in this file storage service
+     */
+    @Override
+    public FileStorageIdService<T> getFileStorageIdService() {
+        return fileStorageIdService;
+    }
 }

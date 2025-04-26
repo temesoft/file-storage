@@ -44,10 +44,10 @@ public class AzureFileStorageServiceImplTest {
                 .connectionString(connectionString)
                 .buildClient();
 
-        fileStorageService = new AzureFileStorageServiceImpl<>(
+        fileStorageService = new LoggingFileStorageServiceWrapper<>(new AzureFileStorageServiceImpl<>(
                 UUIDFileStorageId::new,
                 blobServiceClient.getBlobContainerClient(CONTAINER_NAME)
-        );
+        ));
     }
 
     @Test

@@ -40,7 +40,8 @@ class HdfsFileStorageServiceImplTest {
                 .build();
         cluster.waitActive();
         hdfs = FileSystem.get(conf);
-        fileStorageService = new HdfsFileStorageServiceImpl<>(KsuidFileStorageId::new, hdfs);
+        fileStorageService = new LoggingFileStorageServiceWrapper<>(
+                new HdfsFileStorageServiceImpl<>(KsuidFileStorageId::new, hdfs));
     }
 
     @AfterAll
