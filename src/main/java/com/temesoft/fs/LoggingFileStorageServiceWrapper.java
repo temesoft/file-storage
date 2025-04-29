@@ -159,7 +159,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageService<T
      */
     @Override
     public String getStorageDescription() {
-        return service.toString();
+        return service.getStorageDescription();
     }
 
     /**

@@ -36,7 +36,10 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
+import java.util.AbstractMap;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.temesoft.fs.spring.FileStorageProperties.PREFIX;
 import static org.springframework.beans.factory.config.BeanDefinition.SCOPE_SINGLETON;
@@ -77,17 +80,34 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
     @Component
     @ConditionalOnProperty(value = "${" + PREFIX + ".endpoint-enabled:true}", matchIfMissing = true, havingValue = "true")
     @Endpoint(id = FileStorageBeanRegistryConfiguration.ENDPOINT_ID)
-    public static class FileStorageEndpoint {
+    public static class FileStorageEndpoint implements ApplicationContextAware {
 
         private ApplicationContext context;
+
+        @Override
+        public void setApplicationContext(final ApplicationContext context) throws BeansException {
+            this.context = context;
+        }
 
         /**
          * Endpoint read operation, when enabled - accessible via /actuator/file-storage
          */
         @ReadOperation
         @SuppressWarnings("rawtypes")
-        public Map<String, FileStorageService> viewRegisteredFileStorages() {
-            return context.getBeansOfType(FileStorageService.class);
+        public Map<String, Object> viewRegisteredFileStorages() {
+            return context.getBeansOfType(FileStorageService.class).entrySet().stream().map((Function<Map.Entry<String, FileStorageService>, Map.Entry<String, Object>>) entry -> {
+                final String serviceClassName;
+                if (entry.getValue() instanceof LoggingFileStorageServiceWrapper<?>) {
+                    serviceClassName = ((LoggingFileStorageServiceWrapper<?>) entry.getValue()).getService().getClass().getName();
+                } else {
+                    serviceClassName = entry.getValue().getClass().getName();
+                }
+                return new AbstractMap.SimpleEntry<>(
+                        entry.getKey(),
+                        Map.of("description", entry.getValue().getStorageDescription(),
+                                "storageService", serviceClassName,
+                                "idService", entry.getValue().getFileStorageIdService().getClass().getName()));
+            }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
     }
 

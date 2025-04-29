@@ -13,6 +13,7 @@ import com.temesoft.fs.LoggingFileStorageServiceWrapper;
 import com.temesoft.fs.S3FileStorageServiceImpl;
 import com.temesoft.fs.SftpFileStorageServiceImpl;
 import com.temesoft.fs.SystemFileStorageServiceImpl;
+import com.temesoft.fs.spring.FileStorageBeanRegistryConfiguration.FileStorageEndpoint;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,7 @@ import org.springframework.test.context.TestPropertySource;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -60,12 +62,30 @@ class FileStorageBeanRegistryConfigurationTest extends TestApp {
     }
 
     @Test
+    public void testActuatorEndpoint() {
+        assertThat(context.getBeansOfType(FileStorageEndpoint.class)).hasSize(1);
+        final FileStorageEndpoint endpoint = context.getBean(FileStorageEndpoint.class);
+        final Map<String, Object> storageDetails = endpoint.viewRegisteredFileStorages();
+        assertThat(storageDetails).hasSize(8);
+        assertThat(storageDetails).containsKeys(
+                "trinketAzureFileStorage",
+                "trinketFileStorage",
+                "trinketGcsFileStorage",
+                "trinketHdfsFileStorage",
+                "trinketS3FileStorage",
+                "trinketSftpFileStorage",
+                "trinketSysFileStorage",
+                "widgetFileStorage"
+        );
+    }
+
+    @Test
     public void testSpringBeansByName() {
         assertThat(fileStorageServiceList)
                 .isNotEmpty().hasSize(8);
 
         assertThat(widgetFileStorage).isInstanceOf(LoggingFileStorageServiceWrapper.class);
-        assertThat(((LoggingFileStorageServiceWrapper<?>)widgetFileStorage).getService())
+        assertThat(((LoggingFileStorageServiceWrapper<?>) widgetFileStorage).getService())
                 .isInstanceOf(InMemoryFileStorageServiceImpl.class);
 
         assertThat(context.getBean("widgetFileStorage", LoggingFileStorageServiceWrapper.class).getService())
