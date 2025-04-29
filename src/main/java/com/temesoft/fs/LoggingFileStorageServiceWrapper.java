@@ -34,7 +34,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageService<T
      */
     @Override
     public boolean exists(final T id) throws FileStorageException {
-        logger.debug("{}.exists('{} -> {}')", service.getClass().getSimpleName(), id, generatePath(id));
+        logger.debug("exists('{}')", id);
         return service.exists(id);
     }
 
@@ -46,7 +46,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageService<T
      */
     @Override
     public boolean doesNotExist(final T id) throws FileStorageException {
-        logger.debug("{}.doesNotExist('{} -> {}')", service.getClass().getSimpleName(), id, generatePath(id));
+        logger.debug("doesNotExist('{}')", id);
         return !service.exists(id);
     }
 
@@ -59,7 +59,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageService<T
      */
     @Override
     public long getSize(final T id) throws FileStorageException {
-        logger.debug("{}.getSize('{} -> {}')", service.getClass().getSimpleName(), id, generatePath(id));
+        logger.debug("getSize('{}')", id);
         return service.getSize(id);
     }
 
@@ -72,7 +72,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageService<T
      */
     @Override
     public void create(final T id, final byte[] bytes) throws FileStorageException {
-        logger.debug("{}.create('{} -> {}', {} bytes)", service.getClass().getSimpleName(), id, generatePath(id), bytes.length);
+        logger.debug("create('{}', {} bytes)", id, bytes.length);
         service.create(id, bytes);
     }
 
@@ -86,7 +86,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageService<T
      */
     @Override
     public void create(final T id, final InputStream inputStream, final long contentSize) throws FileStorageException {
-        logger.debug("{}.create('{} -> {}', {}, {})", service.getClass().getSimpleName(), id, generatePath(id), inputStream, contentSize);
+        logger.debug("create('{}', {}, {})", id, inputStream, contentSize);
         service.create(id, inputStream, contentSize);
     }
 
@@ -98,7 +98,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageService<T
      */
     @Override
     public void delete(final T id) throws FileStorageException {
-        logger.debug("{}.delete('{} -> {}')", service.getClass().getSimpleName(), id, generatePath(id));
+        logger.debug("delete('{}')", id);
         service.delete(id);
     }
 
@@ -111,7 +111,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageService<T
      */
     @Override
     public byte[] getBytes(final T id) throws FileStorageException {
-        logger.debug("{}.getBytes('{} -> {}')", service.getClass().getSimpleName(), id, generatePath(id));
+        logger.debug("getBytes('{}')", id);
         return service.getBytes(id);
     }
 
@@ -126,7 +126,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageService<T
      */
     @Override
     public byte[] getBytes(final T id, final long startPosition, final long endPosition) throws FileStorageException {
-        logger.debug("{}.getBytes('{} -> {}', {}, {})", service.getClass().getSimpleName(), id, generatePath(id), startPosition, endPosition);
+        logger.debug("getBytes('{}', {}, {})", id, startPosition, endPosition);
         return service.getBytes(id, startPosition, endPosition);
     }
 
@@ -139,7 +139,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageService<T
      */
     @Override
     public InputStream getInputStream(final T id) throws FileStorageException {
-        logger.debug("{}.getInputStream('{} -> {}')", service.getClass().getSimpleName(), id, generatePath(id));
+        logger.debug("getInputStream('{}')", id);
         return service.getInputStream(id);
     }
 
@@ -150,7 +150,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageService<T
      */
     @Override
     public void deleteAll() throws FileStorageException {
-        logger.debug("{}.deleteAll()", service.getClass().getSimpleName());
+        logger.debug("deleteAll()");
         service.deleteAll();
     }
 

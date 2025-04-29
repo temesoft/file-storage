@@ -2,6 +2,7 @@ package com.temesoft.fs.spring;
 
 import com.azure.storage.blob.BlobContainerClient;
 import com.google.cloud.storage.Storage;
+import com.google.common.annotations.VisibleForTesting;
 import com.temesoft.fs.AzureFileStorageServiceImpl;
 import com.temesoft.fs.FileStorageIdService;
 import com.temesoft.fs.FileStorageService;
@@ -95,19 +96,26 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
         @ReadOperation
         @SuppressWarnings("rawtypes")
         public Map<String, Object> viewRegisteredFileStorages() {
-            return context.getBeansOfType(FileStorageService.class).entrySet().stream().map((Function<Map.Entry<String, FileStorageService>, Map.Entry<String, Object>>) entry -> {
-                final String serviceClassName;
-                if (entry.getValue() instanceof LoggingFileStorageServiceWrapper<?>) {
-                    serviceClassName = ((LoggingFileStorageServiceWrapper<?>) entry.getValue()).getService().getClass().getName();
-                } else {
-                    serviceClassName = entry.getValue().getClass().getName();
-                }
-                return new AbstractMap.SimpleEntry<>(
-                        entry.getKey(),
-                        Map.of("description", entry.getValue().getStorageDescription(),
-                                "storageService", serviceClassName,
-                                "idService", entry.getValue().getFileStorageIdService().getClass().getName()));
-            }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            return context.getBeansOfType(FileStorageService.class)
+                    .entrySet()
+                    .stream()
+                    .map((Function<Map.Entry<String, FileStorageService>, Map.Entry<String, Object>>) entry -> {
+                        final String serviceClassName;
+                        if (entry.getValue() instanceof LoggingFileStorageServiceWrapper<?>) {
+                            serviceClassName = ((LoggingFileStorageServiceWrapper<?>) entry.getValue())
+                                    .getService().getClass().getName();
+                        } else {
+                            serviceClassName = entry.getValue().getClass().getName();
+                        }
+                        return new AbstractMap.SimpleEntry<>(
+                                entry.getKey(),
+                                Map.of(
+                                        "description", entry.getValue().getStorageDescription(),
+                                        "storageService", serviceClassName,
+                                        "idService", entry.getValue().getFileStorageIdService().getClass().getName()
+                                )
+                        );
+                    }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
     }
 
@@ -119,7 +127,15 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
         if (isEmpty(fileStorageProperties.getInstances())) {
             return;
         }
+        postProcessInstancesToBeans(registry, fileStorageProperties);
+    }
 
+    /**
+     * Method for file storage bean creation from configuration provided in {@link FileStorageProperties}
+     */
+    @VisibleForTesting
+    protected void postProcessInstancesToBeans(final BeanDefinitionRegistry registry,
+                                               final FileStorageProperties fileStorageProperties) {
         LOGGER.info(
                 GENERATING_MESSAGE,
                 fileStorageProperties.getInstances().size(),
@@ -196,10 +212,11 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
     /**
      * Generates file storage service for System based on provided config and idService
      */
-    private void createFileStorageServiceSystem(final GenericBeanDefinition beanDefinition,
-                                                final Class<?> idService,
-                                                final FileStorageProperties.FileStorageConfig config,
-                                                final String key) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    @VisibleForTesting
+    protected void createFileStorageServiceSystem(final GenericBeanDefinition beanDefinition,
+                                                  final Class<?> idService,
+                                                  final FileStorageProperties.FileStorageConfig config,
+                                                  final String key) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (isEmpty(config.getSystem().getRootLocation())) {
             throw new IllegalStateException("Missing configuration for system root location: " +
                                             PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "system.root-location");
@@ -215,14 +232,15 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
     /**
      * Generates file storage service for SFTP based on provided config and idService
      */
-    private void createFileStorageServiceSftp(final GenericBeanDefinition beanDefinition,
-                                              final Class<?> idService,
-                                              final FileStorageProperties.FileStorageConfig config,
-                                              final String key) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    @VisibleForTesting
+    protected void createFileStorageServiceSftp(final GenericBeanDefinition beanDefinition,
+                                                final Class<?> idService,
+                                                final FileStorageProperties.FileStorageConfig config,
+                                                final String key) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (isEmpty(config.getSftp().getRemoteHost())) {
             throw new IllegalStateException("Missing configuration for sftp remote host: " +
                                             PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.remote-host");
-        } else if (isEmpty(config.getSftp().getRemotePort())) {
+        } else if (config.getSftp().getRemotePort() <= 0) {
             throw new IllegalStateException("Missing configuration for sftp remote port: " +
                                             PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.remote-port");
         } else if (isEmpty(config.getSftp().getUsername())) {
@@ -251,10 +269,11 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
     /**
      * Generates file storage service for S3 based on provided config and idService
      */
-    private void createFileStorageServiceS3(final GenericBeanDefinition beanDefinition,
-                                            final Class<?> idService,
-                                            final FileStorageProperties.FileStorageConfig config,
-                                            final String key) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    @VisibleForTesting
+    protected void createFileStorageServiceS3(final GenericBeanDefinition beanDefinition,
+                                              final Class<?> idService,
+                                              final FileStorageProperties.FileStorageConfig config,
+                                              final String key) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (isEmpty(config.getS3().getBucketName())) {
             throw new IllegalStateException("Missing configuration for S3 bucket name: " +
                                             PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "s3.bucket-name");
@@ -271,10 +290,11 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
     /**
      * Generates file storage service for GCS based on provided config and idService
      */
-    private void createFileStorageServiceGcs(final GenericBeanDefinition beanDefinition,
-                                             final Class<?> idService,
-                                             final FileStorageProperties.FileStorageConfig config,
-                                             final String key) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    @VisibleForTesting
+    protected void createFileStorageServiceGcs(final GenericBeanDefinition beanDefinition,
+                                               final Class<?> idService,
+                                               final FileStorageProperties.FileStorageConfig config,
+                                               final String key) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (isEmpty(config.getGcs().getBucketName())) {
             throw new IllegalStateException("Missing configuration for GCS bucket name: " +
                                             PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "gcs.bucket-name");

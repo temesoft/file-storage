@@ -30,7 +30,7 @@ import static org.testcontainers.containers.localstack.LocalStackContainer.Servi
 class S3FileStorageServiceImplTest {
 
     private static final String BUCKET_NAME = secure().nextAlphanumeric(20).toLowerCase();
-    private static final byte[] BYTE_CONTENT = secure().nextAlphanumeric(128).getBytes(UTF_8);
+    private static final byte[] BYTE_CONTENT = secure().nextAlphanumeric(1024).getBytes(UTF_8);
     private static final UUID FILE_ID = UUID.randomUUID();
 
     @Container

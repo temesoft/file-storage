@@ -1,6 +1,7 @@
 package com.temesoft.fs.spring;
 
 import com.temesoft.fs.FileStorageService;
+import com.temesoft.fs.TestApp;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;

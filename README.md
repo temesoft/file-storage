@@ -129,6 +129,23 @@ FileStorageService<UUID> fileStorageService = new InMemoryFileStorageServiceImpl
 
 -------
 
+## Slf4j Logging (service wrapper)
+In order to enable logging for file storage services please use this simple wrapper implementation [LoggingFileStorageServiceWrapper.java](src/main/java/com/temesoft/fs/LoggingFileStorageServiceWrapper.java). 
+This class provides `debug` level logging, taking as constructor argument - actual underlying [FileStorageService.java](src/main/java/com/temesoft/fs/FileStorageService.java)
+implementation. Please note that file storage service Spring beans created by [FileStorageBeanRegistryConfiguration.java](src/main/com/temesoft/fs/spring/FileStorageBeanRegistryConfiguration.java)
+are already using this service wrapper.
+
+Example of manual instantiation:
+```java
+FileStorageService<UUID> fileStorageService = new LoggingFileStorageServiceWrapper<>(
+        new InMemoryFileStorageServiceImpl<>(UUIDFileStorageId::new)
+);
+
+
+```
+
+-------
+
 ## Spring-boot usage
 
 File storage service beans can be configured using a simple property interface by using 
@@ -161,7 +178,8 @@ app.file-storage.instances.trinket-sftp.sftp.remote-port=12345
 app.file-storage.instances.trinket-sftp.sftp.username=username
 app.file-storage.instances.trinket-sftp.sftp.password=password
 app.file-storage.instances.trinket-sftp.sftp.root-directory=/tmp/test-file-storage
-app.file-storage.instances.trinket-sftp.sftp.config-properties=
+# Additional configuration for jsch sftp (for example "StrictHostKeyChecking=no")
+app.file-storage.instances.trinket-sftp.sftp.config-properties.StrictHostKeyChecking=no
 
 # S3 integration will require a bean software.amazon.awssdk.services.s3.S3Client
 app.file-storage.instances.trinket-s3.type=S3

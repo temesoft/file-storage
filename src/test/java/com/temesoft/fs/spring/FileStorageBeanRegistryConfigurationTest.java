@@ -1,7 +1,5 @@
 package com.temesoft.fs.spring;
 
-import com.azure.storage.blob.BlobContainerClient;
-import com.google.cloud.storage.Storage;
 import com.temesoft.fs.AzureFileStorageServiceImpl;
 import com.temesoft.fs.FileStorageId;
 import com.temesoft.fs.FileStorageIdService;
@@ -13,19 +11,16 @@ import com.temesoft.fs.LoggingFileStorageServiceWrapper;
 import com.temesoft.fs.S3FileStorageServiceImpl;
 import com.temesoft.fs.SftpFileStorageServiceImpl;
 import com.temesoft.fs.SystemFileStorageServiceImpl;
+import com.temesoft.fs.TestApp;
 import com.temesoft.fs.spring.FileStorageBeanRegistryConfiguration.FileStorageEndpoint;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.hadoop.fs.FileSystem;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
-import software.amazon.awssdk.services.s3.S3Client;
 
 import java.util.List;
 import java.util.Map;
@@ -33,10 +28,9 @@ import java.util.UUID;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 @TestPropertySource(locations = "classpath:application-fs-test.properties")
-@Import(FileStorageBeanRegistryConfigurationTest.TestConfig.class)
+@Import(TestApp.TestConfig.class)
 @EnableAutoConfiguration
 class FileStorageBeanRegistryConfigurationTest extends TestApp {
 
@@ -111,29 +105,6 @@ class FileStorageBeanRegistryConfigurationTest extends TestApp {
 
         assertThat(context.getBean("trinketHdfsFileStorage", LoggingFileStorageServiceWrapper.class).getService())
                 .isInstanceOf(HdfsFileStorageServiceImpl.class);
-    }
-
-    @Configuration
-    static class TestConfig {
-        @Bean
-        S3Client mockS3Client() {
-            return mock(S3Client.class);
-        }
-
-        @Bean
-        Storage mockStorage() {
-            return mock(Storage.class);
-        }
-
-        @Bean
-        BlobContainerClient mockBlobContainerClient() {
-            return mock(BlobContainerClient.class);
-        }
-
-        @Bean
-        FileSystem mockFileSystem() {
-            return mock(FileSystem.class);
-        }
     }
 
     public static class WidgetFileStorageIdService implements FileStorageIdService<Widget> {

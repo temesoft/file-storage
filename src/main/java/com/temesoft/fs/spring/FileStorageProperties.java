@@ -36,7 +36,8 @@ import java.util.Properties;
  * app.file-storage.instances.trinket-sftp.sftp.username=username
  * app.file-storage.instances.trinket-sftp.sftp.password=password
  * app.file-storage.instances.trinket-sftp.sftp.root-directory=/tmp/test-file-storage
- * app.file-storage.instances.trinket-sftp.sftp.configProperties=
+ * # Additional configuration for jsch sftp (for example "StrictHostKeyChecking=no")
+ * app.file-storage.instances.trinket-sftp.sftp.config-properties.StrictHostKeyChecking=no
  *
  * # S3 integration will require a bean software.amazon.awssdk.services.s3.S3Client
  * app.file-storage.instances.trinket-s3.type=S3
@@ -200,7 +201,7 @@ public class FileStorageProperties {
         private String username;
         private String password;
         private String rootDirectory;
-        private Properties configProperties;
+        private Properties configProperties = new Properties();
 
         public String getRemoteHost() {
             return remoteHost;
