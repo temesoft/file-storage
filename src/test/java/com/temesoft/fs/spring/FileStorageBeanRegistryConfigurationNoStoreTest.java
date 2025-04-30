@@ -1,14 +1,14 @@
 package com.temesoft.fs.spring;
 
 import com.temesoft.fs.FileStorageService;
-import com.temesoft.fs.TestApp;
+import com.temesoft.fs.TestBase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class FileStorageBeanRegistryConfigurationNoStoreTest extends TestApp {
+public class FileStorageBeanRegistryConfigurationNoStoreTest extends TestBase {
 
     @Autowired
     private ApplicationContext context;

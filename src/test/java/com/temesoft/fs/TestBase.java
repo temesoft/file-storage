@@ -13,10 +13,13 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import static org.mockito.Mockito.mock;
 
+/**
+ * This is a base class for all spring-boot integrated tests
+ */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @SpringBootApplication(exclude = {HttpClientAutoConfiguration.class})
 @TestPropertySource(properties = {"spring.main.banner-mode=off"})
-public class TestApp {
+public class TestBase {
 
     @Configuration
     public static class TestConfig {

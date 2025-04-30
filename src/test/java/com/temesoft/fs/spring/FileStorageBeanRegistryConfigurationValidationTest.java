@@ -2,7 +2,7 @@ package com.temesoft.fs.spring;
 
 import com.temesoft.fs.FileStorageId;
 import com.temesoft.fs.FileStorageIdService;
-import com.temesoft.fs.TestApp;
+import com.temesoft.fs.TestBase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -20,10 +20,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.springframework.beans.factory.config.BeanDefinition.SCOPE_SINGLETON;
 
-@Import(TestApp.TestConfig.class)
+@Import(TestBase.TestConfig.class)
 @TestPropertySource(locations = "classpath:application-fs-test.properties")
 @EnableAutoConfiguration
-class FileStorageBeanRegistryConfigurationValidationTest extends TestApp {
+class FileStorageBeanRegistryConfigurationValidationTest extends TestBase {
 
     @Autowired
     private ApplicationContext context;

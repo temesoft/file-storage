@@ -11,7 +11,7 @@ import com.temesoft.fs.LoggingFileStorageServiceWrapper;
 import com.temesoft.fs.S3FileStorageServiceImpl;
 import com.temesoft.fs.SftpFileStorageServiceImpl;
 import com.temesoft.fs.SystemFileStorageServiceImpl;
-import com.temesoft.fs.TestApp;
+import com.temesoft.fs.TestBase;
 import com.temesoft.fs.spring.FileStorageBeanRegistryConfiguration.FileStorageEndpoint;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
@@ -30,9 +30,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestPropertySource(locations = "classpath:application-fs-test.properties")
-@Import(TestApp.TestConfig.class)
+@Import(TestBase.TestConfig.class)
 @EnableAutoConfiguration
-class FileStorageBeanRegistryConfigurationTest extends TestApp {
+class FileStorageBeanRegistryConfigurationTest extends TestBase {
 
     @Autowired
     private List<FileStorageService<?>> fileStorageServiceList;

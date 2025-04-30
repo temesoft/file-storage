@@ -25,8 +25,8 @@ A file storage library with a simple common interface, flexible IDs, and custom 
 - Ability to retrieve range of file (for possible streaming / HTTP 206 partial content)
 - Spring-boot simple property configuration integration
 - Easy integration interfaces:
-  - [FileStorageService.java](src/main/java/com/temesoft/fs/FileStorageService.java)
-  - [FileStorageId.java](src/main/java/com/temesoft/fs/FileStorageId.java)
+  - [FileStorageService](src/main/java/com/temesoft/fs/FileStorageService.java)
+  - [FileStorageId](src/main/java/com/temesoft/fs/FileStorageId.java)
 - File storage id providers include: 
   - [UUID](src/main/java/com/temesoft/fs/UUIDFileStorageId.java)
   - [Ksuid](src/main/java/com/temesoft/fs/KsuidFileStorageId.java)
@@ -130,18 +130,32 @@ FileStorageService<UUID> fileStorageService = new InMemoryFileStorageServiceImpl
 -------
 
 ## Slf4j Logging (service wrapper)
-In order to enable logging for file storage services please use this simple wrapper implementation [LoggingFileStorageServiceWrapper.java](src/main/java/com/temesoft/fs/LoggingFileStorageServiceWrapper.java). 
-This class provides `debug` level logging, taking as constructor argument - actual underlying [FileStorageService.java](src/main/java/com/temesoft/fs/FileStorageService.java)
-implementation. Please note that file storage service Spring beans created by [FileStorageBeanRegistryConfiguration.java](src/main/com/temesoft/fs/spring/FileStorageBeanRegistryConfiguration.java)
+In order to enable logging for file storage services please use this simple wrapper implementation [LoggingFileStorageServiceWrapper](src/main/java/com/temesoft/fs/LoggingFileStorageServiceWrapper.java). 
+This class provides `debug` level logging, taking as constructor argument - actual underlying [FileStorageService](src/main/java/com/temesoft/fs/FileStorageService.java)
+implementation. Please note that file storage service Spring beans created by [FileStorageBeanRegistryConfiguration](src/main/com/temesoft/fs/spring/FileStorageBeanRegistryConfiguration.java)
 are already using this service wrapper.
 
-Example of manual instantiation:
+Example of manual logging wrapper instantiation:
 ```java
 FileStorageService<UUID> fileStorageService = new LoggingFileStorageServiceWrapper<>(
         new InMemoryFileStorageServiceImpl<>(UUIDFileStorageId::new)
 );
 
-
+```
+Log output example using service setup from above, for all methods defined in [FileStorageService](src/main/java/com/temesoft/fs/FileStorageService.java):
+```
+thread=main level=DEBUG exists('0e3d3454-1d4f-42ac-a07a-8df859226119')
+thread=main level=DEBUG doesNotExist('0e3d3454-1d4f-42ac-a07a-8df859226119')
+thread=main level=DEBUG getSize('0e3d3454-1d4f-42ac-a07a-8df859226119')
+thread=main level=DEBUG delete('0e3d3454-1d4f-42ac-a07a-8df859226119')
+thread=main level=DEBUG create('0e3d3454-1d4f-42ac-a07a-8df859226119', 1024 bytes)
+thread=main level=DEBUG delete('0e3d3454-1d4f-42ac-a07a-8df859226119')
+thread=main level=DEBUG create('0e3d3454-1d4f-42ac-a07a-8df859226119', java.io.ByteArrayInputStream@17063c32, 1024)
+thread=main level=DEBUG getBytes('0e3d3454-1d4f-42ac-a07a-8df859226119')
+thread=main level=DEBUG getBytes('0e3d3454-1d4f-42ac-a07a-8df859226119', 123, 456)
+thread=main level=DEBUG getInputStream('0e3d3454-1d4f-42ac-a07a-8df859226119')
+thread=main level=DEBUG delete('0e3d3454-1d4f-42ac-a07a-8df859226119')
+thread=main level=DEBUG deleteAll()
 ```
 
 -------
@@ -149,7 +163,7 @@ FileStorageService<UUID> fileStorageService = new LoggingFileStorageServiceWrapp
 ## Spring-boot usage
 
 File storage service beans can be configured using a simple property interface by using 
-[FileStorageBeanFactoryConfiguration.java](src/main/java/com/temesoft/fs/spring/FileStorageBeanFactoryConfiguration.java).
+[FileStorageBeanFactoryConfiguration](src/main/java/com/temesoft/fs/spring/FileStorageBeanFactoryConfiguration.java).
 Following is a list of possible configuration properties to be used with provided bean factory configuration:
 ```properties
 app.file-storage.instances.instances.widget-mem.type=InMemory
