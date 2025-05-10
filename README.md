@@ -280,8 +280,14 @@ long size = fileStorageService.getSize(storageId);
 // Creates file using provided id and byte array
 fileStorageService.create(storageId, byteArrayToStore);
 
+// Creates file using provided id and byte array, when overwrite is TRUE, tries to delete the file before creation
+fileStorageService.create(storageId, byteArrayToStore, overwrite);
+
 // Creates file using provided id and input stream
 fileStorageService.create(storageId, inputStreamWithContentToStore, contentSize);
+
+// Creates file using provided id and input stream, when overwrite is TRUE, tries to delete the file before creation
+fileStorageService.create(storageId, inputStreamWithContentToStore, contentSize, overwrite);
 
 // Returns byte array of file content using provided id
 byte[] storedContent = fileStorageService.getBytes(storageId);
@@ -294,6 +300,9 @@ InputStream storedContentInputStream = fileStorageService.getInputStream(storage
 
 // Deletes file using provided id
 fileStorageService.delete(storageId);
+
+// Deletes file if it exists and if it does not exist simply returns
+fileStorageService.deleteIfExists(storageId);
 
 // Deletes all available files
 fileStorageService.deleteAll();
