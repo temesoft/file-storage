@@ -20,7 +20,7 @@
         <amazon.awssdk.s3.version>2.32.12</amazon.awssdk.s3.version>
         <google-cloud-storage.version>2.54.0</google-cloud-storage.version>
         <azure-storage-blob.version>12.30.0</azure-storage-blob.version>
-        <jsch.version>0.2.26</jsch.version>
+        <jsch.version>2.27.2</jsch.version>
         <hadoop-client.version>3.4.1</hadoop-client.version>
         <jackson.version>2.19.0</jackson.version>
         <junit.jupiter.version>5.12.2</junit.jupiter.version>
