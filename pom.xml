@@ -24,7 +24,7 @@
         <hadoop-client.version>3.4.1</hadoop-client.version>
         <jackson.version>2.19.0</jackson.version>
         <junit.jupiter.version>5.12.2</junit.jupiter.version>
-        <testcontainers.version>1.21.0</testcontainers.version>
+        <testcontainers.version>1.21.1</testcontainers.version>
         <testcontainers.azure.version>1.21.0</testcontainers.azure.version>
         <assertj.version>3.27.3</assertj.version>
         <mockito.version>5.17.0</mockito.version>
