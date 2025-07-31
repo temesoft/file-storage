@@ -19,7 +19,8 @@ class InMemoryFileStorageServiceImplTest {
 
     private static final byte[] BYTE_CONTENT = secure().nextAlphanumeric(1024).getBytes(UTF_8);
     private static final UUID FILE_ID = UUID.randomUUID();
-    private static final FileStorageService<UUID> FILE_STORAGE_SERVICE = new InMemoryFileStorageServiceImpl<>(UUIDFileStorageId::new);
+    private static final FileStorageService<UUID> FILE_STORAGE_SERVICE = new LoggingFileStorageServiceWrapper<>(
+            new InMemoryFileStorageServiceImpl<>(UUIDFileStorageId::new));
 
     @AfterEach
     public void tearDown() {

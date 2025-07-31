@@ -50,7 +50,8 @@ class GcsFileStorageServiceImplTest {
                 .setCredentials(NoCredentials.getInstance())
                 .build()
                 .getService();
-        fileStorageService = new GcsFileStorageServiceImpl<>(UUIDFileStorageId::new, gcsStorage, BUCKET);
+        fileStorageService = new LoggingFileStorageServiceWrapper<>(
+                new GcsFileStorageServiceImpl<>(UUIDFileStorageId::new, gcsStorage, BUCKET));
     }
 
     @AfterAll

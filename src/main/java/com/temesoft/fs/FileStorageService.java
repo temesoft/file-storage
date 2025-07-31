@@ -44,6 +44,21 @@ public interface FileStorageService<T> {
     void create(T id, byte[] bytes) throws FileStorageException;
 
     /**
+     * Creates file using provided id and byte array, when overwrite is TRUE, tries to delete the file before creation
+     *
+     * @param id        - file id
+     * @param bytes     - byte array of content
+     * @param overwrite - flag signifying optional deletion of existing file prior to creation, when set to TRUE
+     * @throws FileStorageException - thrown when unable to delete or create file
+     */
+    default void create(T id, byte[] bytes, boolean overwrite) throws FileStorageException {
+        if (overwrite) {
+            deleteIfExists(id);
+        }
+        create(id, bytes);
+    }
+
+    /**
      * Creates file using provided id and input stream
      *
      * @param id          - file id
@@ -54,12 +69,40 @@ public interface FileStorageService<T> {
     void create(T id, InputStream inputStream, long contentSize) throws FileStorageException;
 
     /**
+     * Creates file using provided id and input stream, when overwrite is TRUE, tries to delete the file before creation
+     *
+     * @param id          - file id
+     * @param inputStream - input stream of content
+     * @param contentSize - size of content in bytes
+     * @param overwrite   - flag signifying optional deletion of existing file prior to creation, when set to TRUE
+     * @throws FileStorageException - thrown when unable to delete or create file
+     */
+    default void create(T id, InputStream inputStream, long contentSize, boolean overwrite) throws FileStorageException {
+        if (overwrite) {
+            deleteIfExists(id);
+        }
+        create(id, inputStream, contentSize);
+    }
+
+    /**
      * Deletes file using provided id
      *
      * @param id - file id
      * @throws FileStorageException - thrown when unable to delete file
      */
     void delete(T id) throws FileStorageException;
+
+    /**
+     * Deletes file if it exists and if it does not exist simply returns
+     *
+     * @param id - file id
+     * @throws FileStorageException - thrown when unable to delete file
+     */
+    default void deleteIfExists(T id) throws FileStorageException {
+        if (exists(id)) {
+            delete(id);
+        }
+    }
 
     /**
      * Returns byte array of file content using provided id
@@ -101,5 +144,10 @@ public interface FileStorageService<T> {
      * Describes the storage type of implementation
      */
     String getStorageDescription();
+
+    /**
+     * Returns id service used in this file storage service
+     */
+    FileStorageIdService<T> getFileStorageIdService();
 
 }

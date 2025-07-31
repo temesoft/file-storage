@@ -24,7 +24,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 @Testcontainers(disabledWithoutDocker = true)
 class SftpFileStorageServiceImplTest {
 
-    private static final byte[] BYTE_CONTENT = secure().nextAlphanumeric(128).getBytes(UTF_8);
+    private static final byte[] BYTE_CONTENT = secure().nextAlphanumeric(1024).getBytes(UTF_8);
     private static final Ksuid FILE_ID = Ksuid.newKsuid();
     private static final String DOCKER_IMAGE = "jmcombs/sftp:latest";
     private static final String SFTP_HOST = "localhost";
@@ -46,7 +46,7 @@ class SftpFileStorageServiceImplTest {
         sftpContainer.start();
         final Properties props = new Properties();
         props.setProperty("StrictHostKeyChecking", "no");
-        fileStorageService = new SftpFileStorageServiceImpl<>(
+        fileStorageService = new LoggingFileStorageServiceWrapper<>(new SftpFileStorageServiceImpl<>(
                 KsuidFileStorageId::new,
                 SFTP_HOST,
                 sftpContainer.getMappedPort(SFTP_PORT),
@@ -54,7 +54,7 @@ class SftpFileStorageServiceImplTest {
                 PASSWORD,
                 SFTP_HOME,
                 props
-        );
+        ));
     }
 
     @AfterAll

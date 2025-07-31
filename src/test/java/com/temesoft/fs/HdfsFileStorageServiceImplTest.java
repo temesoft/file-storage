@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class HdfsFileStorageServiceImplTest {
 
-    private static final byte[] BYTE_CONTENT = secure().nextAlphanumeric(128).getBytes(UTF_8);
+    private static final byte[] BYTE_CONTENT = secure().nextAlphanumeric(1024).getBytes(UTF_8);
     private static final Ksuid FILE_ID = Ksuid.newKsuid();
     private static final KsuidFileStorageId STORAGE_FILE_ID = new KsuidFileStorageId(FILE_ID);
 
@@ -40,7 +40,8 @@ class HdfsFileStorageServiceImplTest {
                 .build();
         cluster.waitActive();
         hdfs = FileSystem.get(conf);
-        fileStorageService = new HdfsFileStorageServiceImpl<>(KsuidFileStorageId::new, hdfs);
+        fileStorageService = new LoggingFileStorageServiceWrapper<>(
+                new HdfsFileStorageServiceImpl<>(KsuidFileStorageId::new, hdfs));
     }
 
     @AfterAll

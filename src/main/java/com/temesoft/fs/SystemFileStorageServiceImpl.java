@@ -213,6 +213,14 @@ public class SystemFileStorageServiceImpl<T> implements FileStorageService<T> {
         }
     }
 
+    /**
+     * Returns id service used in this file storage service
+     */
+    @Override
+    public FileStorageIdService<T> getFileStorageIdService() {
+        return fileStorageIdService;
+    }
+
     private void deleteRecursively(final Path root) throws IOException {
         if (root != null && Files.exists(root)) {
             Files.walkFileTree(root, new SimpleFileVisitor<>() {
