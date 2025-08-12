@@ -25,7 +25,7 @@
         <azure-storage-blob.version>12.30.0</azure-storage-blob.version>
         <jsch.version>2.27.2</jsch.version>
         <hadoop-client.version>3.4.1</hadoop-client.version>
-        <jackson.version>2.19.0</jackson.version>
+        <jackson.version>2.19.2</jackson.version>
         <junit.jupiter.version>5.12.2</junit.jupiter.version>
         <testcontainers.version>1.21.3</testcontainers.version>
         <testcontainers.azure.version>1.21.0</testcontainers.azure.version>
