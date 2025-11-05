@@ -173,20 +173,20 @@ File storage service beans can be configured using a simple property interface b
 [FileStorageBeanFactoryConfiguration](src/main/java/com/temesoft/fs/spring/FileStorageBeanFactoryConfiguration.java).
 Following is a list of possible configuration properties to be used with provided bean factory configuration:
 ```properties
-app.file-storage.instances.instances.widget-mem.type=InMemory
-app.file-storage.instances.instances.widget-mem.bean-qualifier=widgetFileStorage
-app.file-storage.instances.instances.widget-mem.entity-class=org.some.where.Widget
+app.file-storage.instances.widget-mem.type=InMemory
+app.file-storage.instances.widget-mem.bean-qualifier=widgetFileStorage
+app.file-storage.instances.widget-mem.entity-class=org.some.where.Widget
 # idService should implement com.temesoft.fs.FileStorageIdService<Widget>
-app.file-storage.instances.instances.widget-mem.id-service=org.some.where.WidgetFileStorageIdService
+app.file-storage.instances.widget-mem.id-service=org.some.where.WidgetFileStorageIdService
 
-app.file-storage.instances.instances.trinket-mem.type=InMemory
-app.file-storage.instances.instances.trinket-mem.bean-qualifier=trinketFileStorage
-app.file-storage.instances.instances.trinket-mem.entity-class=org.some.where.Trinket
-app.file-storage.instances.instances.trinket-mem.id-service=org.some.where.TrinketFileStorageIdService
+app.file-storage.instances.trinket-mem.type=InMemory
+app.file-storage.instances.trinket-mem.bean-qualifier=trinketFileStorage
+app.file-storage.instances.trinket-mem.entity-class=org.some.where.Trinket
+app.file-storage.instances.trinket-mem.id-service=org.some.where.TrinketFileStorageIdService
 
-app.file-storage.instances.instances.trinket-sys.type=System
-app.file-storage.instances.instances.trinket-sys.bean-qualifier=trinketSysFileStorage
-app.file-storage.instances.instances.trinket-sys.entity-class=org.some.where.Trinket
+app.file-storage.instances.trinket-sys.type=System
+app.file-storage.instances.trinket-sys.bean-qualifier=trinketSysFileStorage
+app.file-storage.instances.trinket-sys.entity-class=org.some.where.Trinket
 app.file-storage.instances.trinket-sys.id-service=org.some.where.TrinketFileStorageIdService
 app.file-storage.instances.trinket-sys.system.root-location=/tmp/test-file-storage
 
