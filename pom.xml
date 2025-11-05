@@ -29,7 +29,7 @@
         <junit.jupiter.version>5.13.4</junit.jupiter.version>
         <testcontainers.version>1.21.3</testcontainers.version>
         <testcontainers.azure.version>1.21.3</testcontainers.azure.version>
-        <assertj.version>3.27.3</assertj.version>
+        <assertj.version>3.27.6</assertj.version>
         <mockito.version>5.19.0</mockito.version>
         <commons-io.version>2.20.0</commons-io.version>
         <commons-lang3.version>3.18.0</commons-lang3.version>
