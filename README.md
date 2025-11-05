@@ -4,34 +4,41 @@
 
 # file-storage #
 
-A file storage library with a simple common interface, flexible IDs, and custom path generation
-
-### Provided file storage implementations include:
-
-- File system storage (using `java.nio`)
-- Amazon AWS S3 storage (AWS SDK v2.x)
-- Google cloud storage (GCS SDK v2.x)
-- Azure cloud storage (azure-storage-blob v12.x)
-- SFTP storage (jsch v0.2.x)
-- HDFS storage (hadoop v3.x)
-- In-memory storage (using `java.util.concurrent.ConcurrentHashMap`)
-- Spring-Boot integration (spring-boot 3.x)
+> File storage library is a simple, lightweight and extensible Java library that provides a unified 
+> interface for working with different storage backends - from local filesystems to major cloud providers.
 
 ------
 
-### Features include:
-- Custom path generator which can be based on your specific id or entity attribute(s)
-- Ability to store and retrieve using `java.io.InputStream` or `byte[]`
-- Ability to retrieve range of file (for possible streaming / HTTP 206 partial content)
-- Spring-boot simple property configuration integration
+### Key Features
+- Flexible ID & Path generation (based on entity attributes)
+- Multiple storage backends (local, AWS S3, Azure, GCS, SFTP, HDFS, In-memory)
+- Simple API using `InputStream` or `byte[]`
+- Range reads (support for partial content / streaming)
+- Spring-Boot integration with programmatic and property based configuration
+- Slf4j logging wrapper for detailed debug output
 - Easy integration interfaces:
-  - [FileStorageService](src/main/java/com/temesoft/fs/FileStorageService.java)
-  - [FileStorageId](src/main/java/com/temesoft/fs/FileStorageId.java)
-- File storage id providers include: 
-  - [UUID](src/main/java/com/temesoft/fs/UUIDFileStorageId.java)
-  - [Ksuid](src/main/java/com/temesoft/fs/KsuidFileStorageId.java)
+    - [FileStorageService](src/main/java/com/temesoft/fs/FileStorageService.java)
+    - [FileStorageId](src/main/java/com/temesoft/fs/FileStorageId.java)
+- File storage id providers include:
+    - [UUID](src/main/java/com/temesoft/fs/UUIDFileStorageId.java)
+    - [Ksuid](src/main/java/com/temesoft/fs/KsuidFileStorageId.java)
 
--------
+------
+
+### Supported Storage Implementations
+
+| Storage Type | Library / SDK | Notes                                |
+|---------------|----------------|--------------------------------------|
+| **Local File System** | `java.nio` | Simple local persistence             |
+| **Amazon AWS S3** | AWS SDK v2.x | AWS S3 cloud-native storage          |
+| **Google Cloud Storage (GCS)** | GCS SDK v2.x | GCP GCS cloud-native storage         |
+| **Azure Blob Storage** | `azure-storage-blob v12.x` | Azure cloud-native storage   |
+| **SFTP** | `jsch v0.2.x` | Remote secure file transfer          |
+| **HDFS** | Hadoop v3.x | Distributed file system support      |
+| **In-memory** | `ConcurrentHashMap` | Great for testing and ephemeral data |
+
+
+------
 
 ## Maven dependency
 
