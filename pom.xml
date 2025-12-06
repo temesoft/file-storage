@@ -20,13 +20,13 @@
         <spring-boot.version>[3.4.3,3.9.9)</spring-boot.version>
         <amazon.awssdk.s3.version>2.32.12</amazon.awssdk.s3.version>
         <google-cloud-storage.version>2.54.0</google-cloud-storage.version>
-        <amazon.awssdk.s3.version>2.37.1</amazon.awssdk.s3.version>
+        <amazon.awssdk.s3.version>2.37.5</amazon.awssdk.s3.version>
         <google-cloud-storage.version>2.56.0</google-cloud-storage.version>
         <azure-storage-blob.version>12.31.2</azure-storage-blob.version>
-        <jsch.version>2.27.3</jsch.version>
+        <jsch.version>2.27.5</jsch.version>
         <hadoop-client.version>3.4.2</hadoop-client.version>
         <jackson.version>2.20.0</jackson.version>
-        <junit.jupiter.version>5.13.4</junit.jupiter.version>
+        <junit.jupiter.version>6.0.1</junit.jupiter.version>
         <testcontainers.version>1.21.3</testcontainers.version>
         <testcontainers.azure.version>1.21.3</testcontainers.azure.version>
         <assertj.version>3.27.6</assertj.version>
@@ -37,7 +37,7 @@
         <logback-classic.version>1.5.18</logback-classic.version>
 
         <!-- plugin versions -->
-        <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
+        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
         <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
