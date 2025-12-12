@@ -16,12 +16,12 @@
 - Range reads (support for partial content / streaming)
 - Spring-Boot integration with programmatic and property based configuration
 - Slf4j logging wrapper for detailed debug output
-- Easy integration interfaces:
+- Easy integration interface:
     - [FileStorageService](src/main/java/com/temesoft/fs/FileStorageService.java)
-    - [FileStorageId](src/main/java/com/temesoft/fs/FileStorageId.java)
 - File storage id providers include:
     - [UUID](src/main/java/com/temesoft/fs/UUIDFileStorageId.java)
     - [Ksuid](src/main/java/com/temesoft/fs/KsuidFileStorageId.java)
+    - [FileStorageId](src/main/java/com/temesoft/fs/FileStorageId.java) - abstract provider for custom id
 
 ------
 
@@ -48,7 +48,7 @@ Add the dependency to maven pom.xml:
 <dependency>
     <groupId>io.github.temesoft</groupId>
     <artifactId>file-storage</artifactId>
-    <version>1.6</version>
+    <version>1.7</version>
 </dependency>
 ```
 
