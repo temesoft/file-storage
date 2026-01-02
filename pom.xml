@@ -30,7 +30,7 @@
         <testcontainers.version>1.21.4</testcontainers.version>
         <testcontainers.azure.version>1.21.4</testcontainers.azure.version>
         <assertj.version>3.27.6</assertj.version>
-        <mockito.version>5.20.0</mockito.version>
+        <mockito.version>5.21.0</mockito.version>
         <commons-io.version>2.21.0</commons-io.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <slf4j-api.version>2.0.17</slf4j-api.version>
