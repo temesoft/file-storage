@@ -26,7 +26,7 @@
         <jsch.version>2.27.7</jsch.version>
         <hadoop-client.version>3.4.2</hadoop-client.version>
         <jackson.version>2.20.1</jackson.version>
-        <junit.jupiter.version>6.0.1</junit.jupiter.version>
+        <junit.jupiter.version>6.0.2</junit.jupiter.version>
         <testcontainers.version>1.21.4</testcontainers.version>
         <testcontainers.azure.version>1.21.4</testcontainers.azure.version>
         <assertj.version>3.27.6</assertj.version>
