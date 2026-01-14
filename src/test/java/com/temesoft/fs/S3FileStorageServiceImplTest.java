@@ -1,5 +1,6 @@
 package com.temesoft.fs;
 
+import com.google.common.base.Ascii;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -29,7 +30,7 @@ import static org.testcontainers.containers.localstack.LocalStackContainer.Servi
 @Testcontainers(disabledWithoutDocker = true)
 class S3FileStorageServiceImplTest {
 
-    private static final String BUCKET_NAME = secure().nextAlphanumeric(20).toLowerCase();
+    private static final String BUCKET_NAME = Ascii.toLowerCase(secure().nextAlphanumeric(20));
     private static final byte[] BYTE_CONTENT = secure().nextAlphanumeric(1024).getBytes(UTF_8);
     private static final UUID FILE_ID = UUID.randomUUID();
 

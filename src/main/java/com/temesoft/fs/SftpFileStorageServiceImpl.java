@@ -1,5 +1,6 @@
 package com.temesoft.fs;
 
+import com.google.common.base.Splitter;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
@@ -13,6 +14,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
@@ -21,6 +23,8 @@ import java.util.Vector;
  * Implementation for file storage service using SFTP (jsch)
  */
 public class SftpFileStorageServiceImpl<T> implements FileStorageService<T> {
+
+    private static final Splitter SEPARATOR_SPLITTER = Splitter.onPattern(FileStorageId.SEPARATOR);
 
     private final FileStorageIdService<T> fileStorageIdService;
     final String remoteHost;
@@ -81,7 +85,6 @@ public class SftpFileStorageServiceImpl<T> implements FileStorageService<T> {
             final String fileName = getFileName(path);
             final String folderPath = getParentPath(path);
             sftpSession.getChannelSftp().cd(rootDirectory + FileStorageId.SEPARATOR + folderPath);
-            final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             return sftpSession.getChannelSftp().stat(fileName).getSize();
         } catch (Exception e) {
             throw new FileStorageException("Unable to get file size with ID: " + id, e);
@@ -279,8 +282,8 @@ public class SftpFileStorageServiceImpl<T> implements FileStorageService<T> {
         if (!path.contains(FileStorageId.SEPARATOR)) {
             return;
         }
-        final String[] folders = path.split(FileStorageId.SEPARATOR);
-        for (String folder : folders) {
+        final List<String> folders = SEPARATOR_SPLITTER.splitToList(path);
+        for (final String folder : folders) {
             if (!folder.isEmpty()) {
                 try {
                     sftpSession.getChannelSftp().cd(folder);
