@@ -169,8 +169,4 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageService<T
     public FileStorageIdService<T> getFileStorageIdService() {
         return service.getFileStorageIdService();
     }
-
-    private String generatePath(final T id) {
-        return service.getFileStorageIdService().fromId(id).generatePath();
-    }
 }

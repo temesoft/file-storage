@@ -27,7 +27,9 @@ public class AzureFileStorageServiceImplTest {
 
     private static final byte[] BYTE_CONTENT = secure().nextAlphanumeric(1024).getBytes(UTF_8);
     private static final UUID FILE_ID = UUID.randomUUID();
-    private static final String CONNECTION_STRING = "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://%s:%d/devstoreaccount1;";
+    private static final String CONNECTION_PROTOCOL = "http";
+    private static final String CONNECTION_ACCOUNT_NAME = "devstoreaccount1";
+    private static final String CONNECTION_ACCOUNT_KEY = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
     private static final String CONTAINER_NAME = "my-container";
     private static final String DOCKER_IMAGE = "mcr.microsoft.com/azure-storage/azurite";
 
@@ -39,7 +41,15 @@ public class AzureFileStorageServiceImplTest {
 
     @BeforeAll
     public static void setup() {
-        final String connectionString = String.format(CONNECTION_STRING, azurite.getHost(), azurite.getFirstMappedPort());
+        final String connectionString = String.format(
+                "DefaultEndpointsProtocol=%s;AccountName=%s;AccountKey=%s;BlobEndpoint=http://%s:%d/%s;",
+                CONNECTION_PROTOCOL,
+                CONNECTION_ACCOUNT_NAME,
+                CONNECTION_ACCOUNT_KEY,
+                azurite.getHost(),
+                azurite.getFirstMappedPort(),
+                CONNECTION_ACCOUNT_NAME
+        );
         final BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
                 .connectionString(connectionString)
                 .buildClient();

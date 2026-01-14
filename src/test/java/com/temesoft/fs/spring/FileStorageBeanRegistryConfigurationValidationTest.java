@@ -117,7 +117,6 @@ class FileStorageBeanRegistryConfigurationValidationTest extends TestBase {
     @Test
     public void testCreateFileStorageServiceSystem() {
         final FileStorageBeanRegistryConfiguration fileStorageRegistry = new FileStorageBeanRegistryConfiguration();
-        final BeanDefinitionRegistry beanDefinitionRegistry = mock(BeanDefinitionRegistry.class);
         fileStorageRegistry.setEnvironment(environment);
         fileStorageRegistry.setApplicationContext(context);
 
