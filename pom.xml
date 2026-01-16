@@ -21,7 +21,7 @@
         <google-cloud-storage.version>2.54.0</google-cloud-storage.version>
         <amazon.awssdk.s3.version>2.41.7</amazon.awssdk.s3.version>
         <google-cloud-storage.version>2.62.0</google-cloud-storage.version>
-        <azure-storage-blob.version>12.32.0</azure-storage-blob.version>
+        <azure-storage-blob.version>12.33.0</azure-storage-blob.version>
         <jsch.version>2.27.7</jsch.version>
         <hadoop-client.version>3.4.2</hadoop-client.version>
         <jackson.version>2.20.1</jackson.version>
