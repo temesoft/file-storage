@@ -19,7 +19,7 @@
         <ksuid.version>1.1.4</ksuid.version>
         <spring-boot.version>[3.4.3,3.9.9)</spring-boot.version>
         <google-cloud-storage.version>2.54.0</google-cloud-storage.version>
-        <amazon.awssdk.s3.version>2.41.9</amazon.awssdk.s3.version>
+        <amazon.awssdk.s3.version>2.41.11</amazon.awssdk.s3.version>
         <google-cloud-storage.version>2.62.0</google-cloud-storage.version>
         <azure-storage-blob.version>12.32.0</azure-storage-blob.version>
         <jsch.version>2.27.7</jsch.version>
