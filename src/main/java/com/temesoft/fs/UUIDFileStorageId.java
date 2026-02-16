@@ -23,9 +23,9 @@ public class UUIDFileStorageId extends FileStorageId<UUID> {
     public String generatePath() {
         final String uuidString = value().toString();
         return uuidString.charAt(0)
-               + SEPARATOR + uuidString.charAt(1)
-               + SEPARATOR + uuidString.charAt(2)
-               + SEPARATOR + uuidString.charAt(3)
-               + SEPARATOR + uuidString.substring(4);
+                + SEPARATOR + uuidString.charAt(1)
+                + SEPARATOR + uuidString.charAt(2)
+                + SEPARATOR + uuidString.charAt(3)
+                + SEPARATOR + uuidString.substring(4);
     }
 }

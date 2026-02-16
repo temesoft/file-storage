@@ -32,7 +32,7 @@ class GcsFileStorageServiceImplTest {
     private static final String DOCKER_IMAGE = "fsouza/fake-gcs-server";
 
     @Container
-    private static final GenericContainer<?> gcsContainer = new GenericContainer<>(DockerImageName.parse(DOCKER_IMAGE))
+    private static final GenericContainer<?> GCS_CONTAINER = new GenericContainer<>(DockerImageName.parse(DOCKER_IMAGE))
             .withExposedPorts(4443)
             .withCreateContainerCmdModifier(cmd -> cmd.withEntrypoint(
                     "/bin/fake-gcs-server",
@@ -45,7 +45,7 @@ class GcsFileStorageServiceImplTest {
     @BeforeAll
     public static void setup() {
         final Storage gcsStorage = StorageOptions.newBuilder()
-                .setHost("http://localhost:" + gcsContainer.getMappedPort(4443))
+                .setHost("http://localhost:" + GCS_CONTAINER.getMappedPort(4443))
                 .setProjectId("test-project")
                 .setCredentials(NoCredentials.getInstance())
                 .build()
@@ -81,6 +81,16 @@ class GcsFileStorageServiceImplTest {
         assertThatNoException().isThrownBy(() -> fileStorageService.
                 create(FILE_ID, new ByteArrayInputStream(BYTE_CONTENT), BYTE_CONTENT.length));
 
+        assertThatThrownBy(() -> fileStorageService.create(FILE_ID, BYTE_CONTENT))
+                .isInstanceOf(FileStorageException.class)
+                .hasMessage("Unable to create file with ID: %s", FILE_ID)
+                .hasRootCauseMessage("File already exist");
+
+        assertThatThrownBy(() -> fileStorageService.create(FILE_ID, new ByteArrayInputStream(BYTE_CONTENT), BYTE_CONTENT.length))
+                .isInstanceOf(FileStorageException.class)
+                .hasMessage("Unable to create file with ID: %s", FILE_ID)
+                .hasRootCauseMessage("File already exist");
+
         assertThatNoException().isThrownBy(() -> fileStorageService.deleteAll());
         assertThatThrownBy(() -> fileStorageService.getBytes(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
@@ -104,6 +114,11 @@ class GcsFileStorageServiceImplTest {
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to get bytes range from file with ID: %s", FILE_ID)
                 .hasRootCauseMessage("File not found");
+
+        assertThatThrownBy(() -> fileStorageService.getSize(FILE_ID))
+                .isInstanceOf(FileStorageException.class)
+                .hasMessage("Unable to get file size with ID: %s", FILE_ID)
+                .hasRootCauseMessage("File does not exist");
 
         assertThatThrownBy(() -> fileStorageService.delete(FILE_ID))
                 .isInstanceOf(FileStorageException.class)

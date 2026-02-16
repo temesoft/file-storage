@@ -42,14 +42,20 @@
 
 ## Maven dependency
 
-Add the dependency to maven pom.xml:
-
 ```xml
 <dependency>
     <groupId>io.github.temesoft</groupId>
     <artifactId>file-storage</artifactId>
-    <version>1.7</version>
+    <version>1.8</version>
 </dependency>
+```
+
+------
+
+## Gradle dependency
+
+```gradle
+testImplementation 'io.github.temesoft:file-storage:1.8'
 ```
 
 -------
