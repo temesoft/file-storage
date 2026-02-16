@@ -34,7 +34,7 @@ public class AzureFileStorageServiceImplTest {
     private static final String DOCKER_IMAGE = "mcr.microsoft.com/azure-storage/azurite";
 
     @Container
-    private static final GenericContainer<?> azurite = new AzuriteContainer(DockerImageName.parse(DOCKER_IMAGE))
+    private static final GenericContainer<?> AZURITE_CONTAINER = new AzuriteContainer(DockerImageName.parse(DOCKER_IMAGE))
             .withExposedPorts(10000);
 
     private static FileStorageService<UUID> fileStorageService;
@@ -46,8 +46,8 @@ public class AzureFileStorageServiceImplTest {
                 CONNECTION_PROTOCOL,
                 CONNECTION_ACCOUNT_NAME,
                 CONNECTION_ACCOUNT_KEY,
-                azurite.getHost(),
-                azurite.getFirstMappedPort(),
+                AZURITE_CONTAINER.getHost(),
+                AZURITE_CONTAINER.getFirstMappedPort(),
                 CONNECTION_ACCOUNT_NAME
         );
         final BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
@@ -80,6 +80,11 @@ public class AzureFileStorageServiceImplTest {
         assertThatNoException().isThrownBy(() -> fileStorageService.
                 create(FILE_ID, new ByteArrayInputStream(BYTE_CONTENT), BYTE_CONTENT.length));
 
+        assertThatThrownBy(() -> fileStorageService.create(FILE_ID, BYTE_CONTENT))
+                .isInstanceOf(FileStorageException.class)
+                .hasMessage("Unable to create file with ID: %s", FILE_ID)
+                .hasRootCauseMessage("File already exist");
+
         assertThatNoException().isThrownBy(() -> fileStorageService.deleteAll());
         assertThatThrownBy(() -> fileStorageService.getBytes(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
@@ -93,6 +98,15 @@ public class AzureFileStorageServiceImplTest {
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to get bytes from file with ID: %s", FILE_ID)
                 .hasRootCauseMessage("File not found");
+
+        assertThatThrownBy(() -> fileStorageService.exists(null))
+                .isInstanceOf(FileStorageException.class)
+                .hasMessage("Unable check existence of file with ID: null");
+
+        assertThatThrownBy(() -> fileStorageService.getSize(FILE_ID))
+                .isInstanceOf(FileStorageException.class)
+                .hasMessage("Unable to get file size with ID: %s", FILE_ID)
+                .hasRootCauseMessage("File does not exist");
 
         assertThatThrownBy(() -> fileStorageService.getInputStream(FILE_ID))
                 .isInstanceOf(FileStorageException.class)

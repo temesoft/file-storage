@@ -41,6 +41,8 @@ class FileStorageBeanRegistryConfigurationTest extends TestBase {
     @Autowired
     @Qualifier("widgetFileStorage")
     private FileStorageService<Widget> widgetFileStorage;
+    @Autowired
+    private FileStorageProperties fileStorageProperties;
 
     @Test
     public void testBasicFunctionality() {
@@ -71,6 +73,7 @@ class FileStorageBeanRegistryConfigurationTest extends TestBase {
                 "trinketSysFileStorage",
                 "widgetFileStorage"
         );
+        assertThat(fileStorageProperties.isEndpointEnabled()).isTrue();
     }
 
     @Test
@@ -115,11 +118,11 @@ class FileStorageBeanRegistryConfigurationTest extends TestBase {
                 public String generatePath() {
                     final String idString = value().getId();
                     return idString.charAt(0)
-                           + SEPARATOR + idString.charAt(1)
-                           + SEPARATOR + idString.charAt(2)
-                           + SEPARATOR + idString.charAt(3)
-                           + SEPARATOR + idString.substring(4)
-                           + ".txt";
+                            + SEPARATOR + idString.charAt(1)
+                            + SEPARATOR + idString.charAt(2)
+                            + SEPARATOR + idString.charAt(3)
+                            + SEPARATOR + idString.substring(4)
+                            + ".txt";
                 }
             };
         }
@@ -133,11 +136,11 @@ class FileStorageBeanRegistryConfigurationTest extends TestBase {
                 public String generatePath() {
                     final String idString = value().getId();
                     return idString.charAt(0)
-                           + SEPARATOR + idString.charAt(1)
-                           + SEPARATOR + idString.charAt(2)
-                           + SEPARATOR + idString.charAt(3)
-                           + SEPARATOR + idString.substring(4)
-                           + ".txt";
+                            + SEPARATOR + idString.charAt(1)
+                            + SEPARATOR + idString.charAt(2)
+                            + SEPARATOR + idString.charAt(3)
+                            + SEPARATOR + idString.substring(4)
+                            + ".txt";
                 }
             };
         }
