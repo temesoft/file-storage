@@ -17,7 +17,7 @@
 
         <!-- dependency versions -->
         <ksuid.version>1.1.4</ksuid.version>
-        <spring-boot.version>3.5.10</spring-boot.version>
+        <spring-boot.version>4.0.2</spring-boot.version>
         <google-cloud-storage.version>2.54.0</google-cloud-storage.version>
         <amazon.awssdk.s3.version>2.41.30</amazon.awssdk.s3.version>
         <google-cloud-storage.version>2.63.0</google-cloud-storage.version>
