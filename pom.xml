@@ -20,7 +20,7 @@
         <spring-boot.version>3.5.11</spring-boot.version>
         <google-cloud-storage.version>2.54.0</google-cloud-storage.version>
         <amazon.awssdk.s3.version>2.42.2</amazon.awssdk.s3.version>
-        <google-cloud-storage.version>2.63.0</google-cloud-storage.version>
+        <google-cloud-storage.version>2.64.0</google-cloud-storage.version>
         <azure-storage-blob.version>12.32.0</azure-storage-blob.version>
         <jsch.version>2.27.8</jsch.version>
         <hadoop-client.version>3.4.3</hadoop-client.version>
