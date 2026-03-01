@@ -1,3 +1,6 @@
+![License](https://img.shields.io/github/license/temesoft/file-storage)
+![Java](https://img.shields.io/badge/Java-17%2B-blue)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.temesoft/file-storage.svg)](https://central.sonatype.com/artifact/io.github.temesoft/file-storage)
 [![Java CI](https://github.com/temesoft/file-storage/actions/workflows/main.yml/badge.svg)](https://github.com/temesoft/file-storage/actions/workflows/main.yml)
 [![Javadoc](https://javadoc.io/badge2/io.github.temesoft/file-storage/javadoc.svg)](https://javadoc.io/doc/io.github.temesoft/file-storage)
 <img src='https://raw.githubusercontent.com/temesoft/file-storage/refs/heads/main/jacoco.svg' alt='Test coverage (jacoco)' title='Test coverage (jacoco)'>
