@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -37,6 +38,7 @@ class S3FileStorageServiceImplTest {
     @Container
     private static final LocalStackContainer localstack = new LocalStackContainer(
             DockerImageName.parse("localstack/localstack:latest"))
+            .withStartupTimeout(Duration.ofMinutes(2))
             .withServices(S3);
 
     private static S3Client s3Client;
