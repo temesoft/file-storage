@@ -69,9 +69,8 @@ class SftpFileStorageServiceImplTest {
         assertThat(fileStorageService.getSize(FILE_ID)).isEqualTo(BYTE_CONTENT.length);
         assertThat(fileStorageService.exists(FILE_ID)).isEqualTo(true);
 
-        assertThatThrownBy(() -> fileStorageService.getBytes(FILE_ID, 10, 20))
-                .isInstanceOf(FileStorageException.class)
-                .hasMessage("Method getBytes(...) by range is not implemented");
+        assertThat(fileStorageService.getBytes(FILE_ID, 2, 5))
+                .isEqualTo(new byte[]{BYTE_CONTENT[2], BYTE_CONTENT[3], BYTE_CONTENT[4]});
 
         assertThat(IOUtils.toByteArray(fileStorageService.getInputStream(FILE_ID))).isEqualTo(BYTE_CONTENT);
 
@@ -116,7 +115,8 @@ class SftpFileStorageServiceImplTest {
 
         assertThatThrownBy(() -> fileStorageService.getBytes(FILE_ID, 10, 20))
                 .isInstanceOf(FileStorageException.class)
-                .hasMessage("Method getBytes(...) by range is not implemented");
+                .hasMessage("Unable to get bytes from file with ID: %s", FILE_ID)
+                .hasRootCauseMessage("No such file");
 
         assertThatThrownBy(() -> fileStorageService.delete(FILE_ID))
                 .isInstanceOf(FileStorageException.class)

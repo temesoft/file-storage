@@ -22,6 +22,17 @@ public abstract class FileStorageId<T> {
     public abstract String generatePath();
 
     /**
+     * Common path generation logic based on first 4 characters
+     */
+    protected String generateStandardPath(final String idString) {
+        return idString.charAt(0)
+                + SEPARATOR + idString.charAt(1)
+                + SEPARATOR + idString.charAt(2)
+                + SEPARATOR + idString.charAt(3)
+                + SEPARATOR + idString.substring(4);
+    }
+
+    /**
      * Returns actual value for provided ID
      */
     public T value() {

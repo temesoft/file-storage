@@ -31,6 +31,8 @@ public class SftpFileStorageServiceImpl<T> implements FileStorageService<T> {
     final int remotePort;
     final String username;
     final String password;
+    final String privateKeyPath;
+    final String passphrase;
     final String rootDirectory;
     final Properties configProperties;
 
@@ -44,11 +46,28 @@ public class SftpFileStorageServiceImpl<T> implements FileStorageService<T> {
                                       final String password,
                                       final String rootDirectory,
                                       final Properties configProperties) {
+        this(fileStorageIdService, remoteHost, remotePort, username, password, null, null, rootDirectory, configProperties);
+    }
+
+    /**
+     * Constructor taking SFTP details including SSH key details as arguments to set up SFTP
+     */
+    public SftpFileStorageServiceImpl(final FileStorageIdService<T> fileStorageIdService,
+                                      final String remoteHost,
+                                      final int remotePort,
+                                      final String username,
+                                      final String password,
+                                      final String privateKeyPath,
+                                      final String passphrase,
+                                      final String rootDirectory,
+                                      final Properties configProperties) {
         this.fileStorageIdService = fileStorageIdService;
         this.remoteHost = remoteHost;
         this.remotePort = remotePort;
         this.username = username;
         this.password = password;
+        this.privateKeyPath = privateKeyPath;
+        this.passphrase = passphrase;
         this.rootDirectory = rootDirectory;
         this.configProperties = configProperties;
     }
@@ -158,7 +177,24 @@ public class SftpFileStorageServiceImpl<T> implements FileStorageService<T> {
 
     @Override
     public byte[] getBytes(final T id, final long startPosition, final long endPosition) throws FileStorageException {
-        throw new FileStorageException("Method getBytes(...) by range is not implemented");
+        try (final SftpSession sftpSession = new SftpSession()) {
+            final String path = fileStorageIdService.fromId(id).generatePath();
+            final String fileName = getFileName(path);
+            final String folderPath = getParentPath(path);
+            sftpSession.getChannelSftp().cd(rootDirectory + FileStorageId.SEPARATOR + folderPath);
+            final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            final long length = endPosition - startPosition;
+            sftpSession.getChannelSftp().get(fileName, outputStream, null, ChannelSftp.RESUME, startPosition);
+            final byte[] allBytes = outputStream.toByteArray();
+            if (allBytes.length <= length) {
+                return allBytes;
+            }
+            final byte[] rangeBytes = new byte[(int) length];
+            System.arraycopy(allBytes, 0, rangeBytes, 0, (int) length);
+            return rangeBytes;
+        } catch (SftpException | JSchException e) {
+            throw new FileStorageException("Unable to get bytes from file with ID: " + id, e);
+        }
     }
 
     @Override
@@ -228,8 +264,17 @@ public class SftpFileStorageServiceImpl<T> implements FileStorageService<T> {
 
         public SftpSession() throws JSchException {
             final JSch jsch = new JSch();
+            if (privateKeyPath != null) {
+                if (passphrase != null) {
+                    jsch.addIdentity(privateKeyPath, passphrase);
+                } else {
+                    jsch.addIdentity(privateKeyPath);
+                }
+            }
             final Session session = jsch.getSession(username, remoteHost, remotePort);
-            session.setPassword(password);
+            if (password != null) {
+                session.setPassword(password);
+            }
             if (configProperties != null) {
                 session.setConfig(configProperties);
             }

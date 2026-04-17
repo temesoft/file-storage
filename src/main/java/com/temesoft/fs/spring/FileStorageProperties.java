@@ -200,6 +200,8 @@ public class FileStorageProperties {
         private int remotePort;
         private String username;
         private String password;
+        private String privateKeyPath;
+        private String passphrase;
         private String rootDirectory;
         private Properties configProperties = new Properties();
 
@@ -233,6 +235,22 @@ public class FileStorageProperties {
 
         public void setPassword(final String password) {
             this.password = password;
+        }
+
+        public String getPrivateKeyPath() {
+            return privateKeyPath;
+        }
+
+        public void setPrivateKeyPath(final String privateKeyPath) {
+            this.privateKeyPath = privateKeyPath;
+        }
+
+        public String getPassphrase() {
+            return passphrase;
+        }
+
+        public void setPassphrase(final String passphrase) {
+            this.passphrase = passphrase;
         }
 
         public String getRootDirectory() {
