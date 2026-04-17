@@ -94,7 +94,7 @@ class SftpFileStorageServiceImplTest {
         Assertions.assertThatThrownBy(() -> fileStorageService.getBytes(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to get bytes from file with ID: %s", FILE_ID)
-                .hasRootCauseMessage("No such file");
+                .hasRootCauseMessage("SSH_FX_NO_SUCH_FILE: No such file");
 
         Assertions.assertThatThrownBy(() -> fileStorageService.getSize(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
@@ -106,17 +106,17 @@ class SftpFileStorageServiceImplTest {
         assertThatThrownBy(() -> fileStorageService.getBytes(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to get bytes from file with ID: %s", FILE_ID)
-                .hasRootCauseMessage("No such file");
+                .hasRootCauseMessage("SSH_FX_NO_SUCH_FILE: No such file");
 
         assertThatThrownBy(() -> fileStorageService.getInputStream(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to get input stream from file with ID: %s", FILE_ID)
-                .hasRootCauseMessage("No such file");
+                .hasRootCauseMessage("SSH_FX_NO_SUCH_FILE: No such file");
 
         assertThatThrownBy(() -> fileStorageService.getBytes(FILE_ID, 10, 20))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessage("Unable to get bytes from file with ID: %s", FILE_ID)
-                .hasRootCauseMessage("No such file");
+                .hasRootCauseMessage("SSH_FX_NO_SUCH_FILE: No such file");
 
         assertThatThrownBy(() -> fileStorageService.delete(FILE_ID))
                 .isInstanceOf(FileStorageException.class)
