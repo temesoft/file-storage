@@ -179,7 +179,7 @@ class FileStorageBeanRegistryConfigurationValidationTest extends TestBase {
             fileStorageRegistry.createFileStorageServiceSftp(beanDefinition, StringIdService.class, config, "test1");
         })
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Missing configuration for sftp password: app.file-storage.instances.test1.sftp.password");
+                .hasMessage("Missing configuration for sftp password or private key: app.file-storage.instances.test1.sftp.password/private-key-path");
 
         config.getSftp().setPassword("tester");
 

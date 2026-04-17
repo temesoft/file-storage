@@ -112,7 +112,7 @@ FileStorageService<UUID> fileStorageService = new AzureFileStorageServiceImpl<>(
 );
 ```
 
-#### SFTP file storage initialization
+#### SFTP file storage initialization (Password)
 ```java
 Properties props = new Properties();
 props.setProperty("StrictHostKeyChecking", "no");
@@ -122,6 +122,23 @@ FileStorageService<UUID> fileStorageService = new SftpFileStorageServiceImpl<>(
         SFTP_PORT,
         USERNAME,
         PASSWORD,
+        ROOT_DIRECTORY,
+        props
+);
+```
+
+#### SFTP file storage initialization (SSH Key)
+```java
+Properties props = new Properties();
+props.setProperty("StrictHostKeyChecking", "no");
+FileStorageService<UUID> fileStorageService = new SftpFileStorageServiceImpl<>(
+        UUIDFileStorageId::new,
+        SFTP_HOSTNAME,
+        SFTP_PORT,
+        USERNAME,
+        null, // password
+        PRIVATE_KEY_PATH,
+        PASSPHRASE,
         ROOT_DIRECTORY,
         props
 );
@@ -206,7 +223,10 @@ app.file-storage.instances.trinket-sftp.id-service=org.some.where.TrinketFileSto
 app.file-storage.instances.trinket-sftp.sftp.remote-host=127.0.0.1
 app.file-storage.instances.trinket-sftp.sftp.remote-port=12345
 app.file-storage.instances.trinket-sftp.sftp.username=username
+# Either password or private-key-path is required
 app.file-storage.instances.trinket-sftp.sftp.password=password
+app.file-storage.instances.trinket-sftp.sftp.private-key-path=/path/to/id_rsa
+app.file-storage.instances.trinket-sftp.sftp.passphrase=optional_passphrase
 app.file-storage.instances.trinket-sftp.sftp.root-directory=/tmp/test-file-storage
 # Additional configuration for jsch sftp (for example "StrictHostKeyChecking=no")
 app.file-storage.instances.trinket-sftp.sftp.config-properties.StrictHostKeyChecking=no
@@ -322,6 +342,33 @@ fileStorageService.deleteIfExists(storageId);
 
 // Deletes all available files
 fileStorageService.deleteAll();
+```
+
+-------
+
+## Error Handling
+The library provides a unified exception model using a single unchecked exception: 
+[FileStorageException](src/main/java/com/temesoft/fs/FileStorageException.java). 
+
+All implementations catch backend-specific exceptions (e.g., `S3Exception`, `SftpException`, `IOException`) 
+and wrap them into a `FileStorageException` with a descriptive message and the original cause.
+
+Common failure scenarios that throw `FileStorageException`:
+- **File Not Found:** Attempting to delete or read a non-existent file.
+- **Connection Failure:** Network issues with cloud providers or SFTP servers.
+- **Authentication Failure:** Incorrect credentials provided for storage backends.
+- **Access Denied:** Insufficient permissions to perform a requested storage operation.
+- **File Already Exists:** Attempting to create a file that already exists without the `overwrite` flag.
+- **Range Error:** Invalid `startPosition` or `endPosition` for partial content reads.
+
+Example of handling exceptions:
+```java
+try {
+    fileStorageService.create(id, bytes);
+} catch (FileStorageException e) {
+    // Handle the storage error (e.g., log, retry, or fallback)
+    LOGGER.error("Storage action failed: {}", e.getMessage(), e.getCause());
+}
 ```
 
 -------

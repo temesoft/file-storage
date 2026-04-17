@@ -246,9 +246,9 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
         } else if (isEmpty(config.getSftp().getUsername())) {
             throw new IllegalStateException("Missing configuration for sftp username: " +
                     PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.username");
-        } else if (isEmpty(config.getSftp().getPassword())) {
-            throw new IllegalStateException("Missing configuration for sftp password: " +
-                    PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.password");
+        } else if (isEmpty(config.getSftp().getPassword()) && isEmpty(config.getSftp().getPrivateKeyPath())) {
+            throw new IllegalStateException("Missing configuration for sftp password or private key: " +
+                    PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.password/private-key-path");
         } else if (isEmpty(config.getSftp().getRootDirectory())) {
             throw new IllegalStateException("Missing configuration for sftp root directory: " +
                     PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.root-directory");
@@ -260,6 +260,8 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                 config.getSftp().getRemotePort(),
                 config.getSftp().getUsername(),
                 config.getSftp().getPassword(),
+                config.getSftp().getPrivateKeyPath(),
+                config.getSftp().getPassphrase(),
                 config.getSftp().getRootDirectory(),
                 config.getSftp().getConfigProperties()
         ));

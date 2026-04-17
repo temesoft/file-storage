@@ -21,11 +21,6 @@ public class KsuidFileStorageId extends FileStorageId<Ksuid> {
      */
     @Override
     public String generatePath() {
-        final String idString = value().toString();
-        return idString.charAt(0)
-                + SEPARATOR + idString.charAt(1)
-                + SEPARATOR + idString.charAt(2)
-                + SEPARATOR + idString.charAt(3)
-                + SEPARATOR + idString.substring(4);
+        return generateStandardPath(value().toString());
     }
 }

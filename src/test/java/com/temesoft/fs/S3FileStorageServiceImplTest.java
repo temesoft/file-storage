@@ -36,8 +36,7 @@ class S3FileStorageServiceImplTest {
 
     @Container
     private static final LocalStackContainer localstack = new LocalStackContainer(
-            DockerImageName.parse("localstack/localstack:latest"))
-            .withEnv("LOCALSTACK_ACKNOWLEDGE_ACCOUNT_REQUIREMENT", "1")
+            DockerImageName.parse("localstack/localstack:3.0"))
             .withServices(S3);
 
     private static S3Client s3Client;
