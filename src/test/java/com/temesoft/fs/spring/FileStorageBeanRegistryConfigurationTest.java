@@ -1,6 +1,7 @@
 package com.temesoft.fs.spring;
 
 import com.temesoft.fs.AzureFileStorageServiceImpl;
+import com.temesoft.fs.EncryptingFileStorageServiceWrapper;
 import com.temesoft.fs.FileStorageId;
 import com.temesoft.fs.FileStorageIdService;
 import com.temesoft.fs.FileStorageService;
@@ -92,13 +93,13 @@ class FileStorageBeanRegistryConfigurationTest extends TestBase {
                 .isInstanceOf(InMemoryFileStorageServiceImpl.class);
 
         assertThat(context.getBean("trinketSysFileStorage", LoggingFileStorageServiceWrapper.class).getService())
-                .isInstanceOf(SystemFileStorageServiceImpl.class);
+                .isInstanceOf(EncryptingFileStorageServiceWrapper.class);
 
         assertThat(context.getBean("trinketSftpFileStorage", LoggingFileStorageServiceWrapper.class).getService())
                 .isInstanceOf(SftpFileStorageServiceImpl.class);
 
         assertThat(context.getBean("trinketS3FileStorage", LoggingFileStorageServiceWrapper.class).getService())
-                .isInstanceOf(S3FileStorageServiceImpl.class);
+                .isInstanceOf(EncryptingFileStorageServiceWrapper.class);
 
         assertThat(context.getBean("trinketGcsFileStorage", LoggingFileStorageServiceWrapper.class).getService())
                 .isInstanceOf(GcsFileStorageServiceImpl.class);

@@ -17,6 +17,8 @@
 - Multiple storage backends (local, AWS S3, Azure, GCS, SFTP, HDFS, In-memory)
 - Simple API using `InputStream` or `byte[]`
 - Range reads (support for partial content / streaming)
+- Transparent Data Encryption (AES-GCM chunked encryption layer)
+- Service Layering (Decorator pattern for adding logging, encryption, etc.)
 - Spring-Boot integration with programmatic and property based configuration
 - Slf4j logging wrapper for detailed debug output
 - Easy integration interface:
@@ -39,6 +41,7 @@
 | **SFTP** | `jsch v0.2.x` | Remote secure file transfer          |
 | **HDFS** | Hadoop v3.x | Distributed file system support      |
 | **In-memory** | `ConcurrentHashMap` | Great for testing and ephemeral data |
+| **Encryption Layer** | `AES-GCM` | Transparent chunked encryption wrapper |
 
 
 ------
@@ -49,7 +52,7 @@
 <dependency>
     <groupId>io.github.temesoft</groupId>
     <artifactId>file-storage</artifactId>
-    <version>1.8</version>
+    <version>1.9</version>
 </dependency>
 ```
 
@@ -58,7 +61,7 @@
 ## Gradle dependency
 
 ```gradle
-testImplementation 'io.github.temesoft:file-storage:1.8'
+testImplementation 'io.github.temesoft:file-storage:1.9'
 ```
 
 -------
@@ -162,7 +165,11 @@ FileStorageService<UUID> fileStorageService = new InMemoryFileStorageServiceImpl
 
 -------
 
-## Slf4j Logging (service wrapper)
+## Service Wrappers (Layering)
+The library uses the Decorator pattern to allow layering additional functionality over any base storage implementation.
+This is managed via the [FileStorageServiceWrapper](src/main/java/com/temesoft/fs/FileStorageServiceWrapper.java) interface.
+
+### Slf4j Logging Wrapper
 In order to enable logging for file storage services please use this simple wrapper implementation [LoggingFileStorageServiceWrapper](src/main/java/com/temesoft/fs/LoggingFileStorageServiceWrapper.java). 
 This class provides `debug` level logging, taking as constructor argument - actual underlying [FileStorageService](src/main/java/com/temesoft/fs/FileStorageService.java)
 implementation. Please note that file storage service Spring beans created by [FileStorageBeanRegistryConfiguration](src/main/com/temesoft/fs/spring/FileStorageBeanRegistryConfiguration.java)
@@ -175,6 +182,28 @@ FileStorageService<UUID> fileStorageService = new LoggingFileStorageServiceWrapp
 );
 
 ```
+
+### Transparent Encryption Wrapper
+Provides data-at-rest protection using **AES-GCM** with chunked processing via [EncryptingFileStorageServiceWrapper](src/main/java/com/temesoft/fs/EncryptingFileStorageServiceWrapper.java).
+Files are encrypted in discrete chunks, allowing for efficient random-access reads (range requests) without decrypting the entire file.
+
+```java
+FileStorageCryptor cryptor = new AesGcmChunkedFileStorageCryptor(
+        "my-key-id", 
+        "base64-encoded-256-bit-aes-key"
+);
+
+FileStorageService<UUID> encryptedStorage = new EncryptingFileStorageServiceWrapper<>(
+        new SystemFileStorageServiceImpl<>(UUIDFileStorageId::new, Path.of("/data")),
+        cryptor,
+        65536 // 64KB chunk size
+);
+```
+
+#### Encrypted File Layout:
+- **Header:** Metadata including version, algorithm, chunk size, original size, and key ID.
+- **Chunks:** Each chunk is stored as `[12-byte Nonce][Ciphertext][16-byte GCM Tag]`.
+
 Log output example using service setup from above, for all methods defined in [FileStorageService](src/main/java/com/temesoft/fs/FileStorageService.java):
 ```
 thread=main level=DEBUG exists('0e3d3454-1d4f-42ac-a07a-8df859226119')
@@ -196,19 +225,30 @@ thread=main level=DEBUG deleteAll()
 ## Spring-boot usage
 
 File storage service beans can be configured using a simple property interface by using 
-[FileStorageBeanFactoryConfiguration](src/main/java/com/temesoft/fs/spring/FileStorageBeanFactoryConfiguration.java).
-Following is a list of possible configuration properties to be used with provided bean factory configuration:
+[FileStorageBeanRegistryConfiguration](src/main/java/com/temesoft/fs/spring/FileStorageBeanRegistryConfiguration.java).
+Following is a list of possible configuration properties:
 ```properties
+# Global setting for actuator endpoint
+app.file-storage.endpoint-enabled=true
+
+# Instance configuration
 app.file-storage.instances.widget-mem.type=InMemory
 app.file-storage.instances.widget-mem.bean-qualifier=widgetFileStorage
 app.file-storage.instances.widget-mem.entity-class=org.some.where.Widget
 # idService should implement com.temesoft.fs.FileStorageIdService<Widget>
 app.file-storage.instances.widget-mem.id-service=org.some.where.WidgetFileStorageIdService
 
-app.file-storage.instances.trinket-mem.type=InMemory
-app.file-storage.instances.trinket-mem.bean-qualifier=trinketFileStorage
-app.file-storage.instances.trinket-mem.entity-class=org.some.where.Trinket
-app.file-storage.instances.trinket-mem.id-service=org.some.where.TrinketFileStorageIdService
+# Instance with Encryption enabled
+app.file-storage.instances.secure-sys.type=System
+app.file-storage.instances.secure-sys.bean-qualifier=secureFileStorage
+app.file-storage.instances.secure-sys.entity-class=org.some.where.Document
+app.file-storage.instances.secure-sys.id-service=org.some.where.DocumentIdService
+app.file-storage.instances.secure-sys.system.root-location=/tmp/secure-data
+# Encryption settings
+app.file-storage.instances.secure-sys.encryption.enabled=true
+app.file-storage.instances.secure-sys.encryption.key-id=prod-key-1
+app.file-storage.instances.secure-sys.encryption.base64-key=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+app.file-storage.instances.secure-sys.encryption.chunk-size=65536
 
 app.file-storage.instances.trinket-sys.type=System
 app.file-storage.instances.trinket-sys.bean-qualifier=trinketSysFileStorage
@@ -258,6 +298,10 @@ app.file-storage.instances.trinket-hdfs.bean-qualifier=trinketHdfsFileStorage
 app.file-storage.instances.trinket-hdfs.entity-class=org.some.where.Trinket
 app.file-storage.instances.trinket-hdfs.id-service=org.some.where.TrinketFileStorageIdService
 app.file-storage.instances.trinket-hdfs.azure.bucket-name=test-bucket
+```
+
+#### Actuator Endpoint
+When enabled, the `/actuator/file-storage` endpoint provides a JSON view of all registered storage beans, their descriptions, and underlying implementations (unwrapping any decorators).
 
 ```
 

@@ -3,9 +3,13 @@ package com.temesoft.fs.spring;
 import com.azure.storage.blob.BlobContainerClient;
 import com.google.cloud.storage.Storage;
 import com.google.common.annotations.VisibleForTesting;
+import com.temesoft.fs.AesGcmChunkedFileStorageCryptor;
 import com.temesoft.fs.AzureFileStorageServiceImpl;
+import com.temesoft.fs.EncryptingFileStorageServiceWrapper;
+import com.temesoft.fs.FileStorageCryptor;
 import com.temesoft.fs.FileStorageIdService;
 import com.temesoft.fs.FileStorageService;
+import com.temesoft.fs.FileStorageServiceWrapper;
 import com.temesoft.fs.GcsFileStorageServiceImpl;
 import com.temesoft.fs.HdfsFileStorageServiceImpl;
 import com.temesoft.fs.InMemoryFileStorageServiceImpl;
@@ -100,13 +104,10 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                     .entrySet()
                     .stream()
                     .map((Function<Map.Entry<String, FileStorageService>, Map.Entry<String, Object>>) entry -> {
-                        final String serviceClassName;
-                        if (entry.getValue() instanceof LoggingFileStorageServiceWrapper<?>) {
-                            serviceClassName = ((LoggingFileStorageServiceWrapper<?>) entry.getValue())
-                                    .getService().getClass().getName();
-                        } else {
-                            serviceClassName = entry.getValue().getClass().getName();
-                        }
+                        final String serviceClassName = FileStorageServiceWrapper
+                                .unwrap(entry.getValue())
+                                .getClass()
+                                .getName();
                         return new AbstractMap.SimpleEntry<>(
                                 entry.getKey(),
                                 Map.of(
@@ -162,7 +163,7 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                 final Class<?> entityClass = Class.forName(config.getEntityClass());
 
                 if (config.getType() == FileStorageOption.InMemory) {
-                    createFileStorageServiceInMemory(beanDefinition, idService);
+                    createFileStorageServiceInMemory(beanDefinition, idService, config);
                 } else if (config.getType() == FileStorageOption.System) {
                     createFileStorageServiceSystem(beanDefinition, idService, config, key);
                 } else if (config.getType() == FileStorageOption.Sftp) {
@@ -172,9 +173,9 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                 } else if (config.getType() == FileStorageOption.GCS) {
                     createFileStorageServiceGcs(beanDefinition, idService, config, key);
                 } else if (config.getType() == FileStorageOption.Azure) {
-                    createFileStorageServiceAzure(beanDefinition, idService);
+                    createFileStorageServiceAzure(beanDefinition, idService, config);
                 } else if (config.getType() == FileStorageOption.HDFS) {
-                    createFileStorageServiceHdfs(beanDefinition, idService);
+                    createFileStorageServiceHdfs(beanDefinition, idService, config);
                 } else {
                     throw new IllegalStateException("Not configured to create storage of this type: " + config.getType());
                 }
@@ -198,15 +199,67 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
     }
 
     /**
+     * Conditionally wraps a file storage service with encryption capabilities based on the provided configuration.
+     * <p>
+     * If encryption is enabled and valid, it returns an {@link EncryptingFileStorageServiceWrapper} using
+     * the AES/GCM chunked algorithm. If encryption is disabled, the original service is returned.
+     *
+     * @param <T>     The type of file metadata handled by the service
+     * @param service The base storage service to potentially wrap
+     * @param props   The storage configuration containing encryption settings
+     * @return An encrypted wrapper if enabled; otherwise, the original service
+     * @throws IllegalArgumentException if the algorithm is unsupported, the key is missing, or chunk size is invalid
+     */
+    private <T> FileStorageService<T> maybeWrapWithEncryption(
+            final FileStorageService<T> service,
+            final FileStorageProperties.FileStorageConfig props
+    ) {
+        final FileStorageProperties.EncryptionProperties encryption = props.getEncryption();
+        if (encryption == null || !encryption.isEnabled()) {
+            return service;
+        }
+
+        final String algorithm = encryption.getAlgorithm();
+        if (!"AES_GCM_CHUNKED".equalsIgnoreCase(algorithm)) {
+            throw new IllegalArgumentException("Unsupported encryption algorithm: " + algorithm);
+        }
+        if (isEmpty(encryption.getBase64Key())) {
+            throw new IllegalArgumentException("Encryption is enabled but base64Key is not configured");
+        }
+        if (encryption.getChunkSize() <= 0) {
+            throw new IllegalArgumentException("Encryption chunkSize must be > 0");
+        }
+
+        final FileStorageCryptor cryptor = new AesGcmChunkedFileStorageCryptor(
+                encryption.getKeyId(),
+                encryption.getBase64Key()
+        );
+
+        return new EncryptingFileStorageServiceWrapper<>(service, cryptor, encryption.getChunkSize());
+    }
+
+    /**
+     * Wraps a file storage service with a logging layer to track storage operations.
+     *
+     * @param <T>     The type of file metadata handled by the service
+     * @param service The base storage service to wrap
+     * @return A new {@link LoggingFileStorageServiceWrapper} decorating the original service
+     */
+    private <T> FileStorageService<T> wrapWithLogging(final FileStorageService<T> service) {
+        return new LoggingFileStorageServiceWrapper<>(service);
+    }
+
+    /**
      * Generates file storage service for InMemory based on provided config and idService
      */
     private void createFileStorageServiceInMemory(final GenericBeanDefinition beanDefinition,
-                                                  final Class<?> idService) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+                                                  final Class<?> idService,
+                                                  final FileStorageProperties.FileStorageConfig config) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         beanDefinition.setBeanClass(InMemoryFileStorageServiceImpl.class);
-        final FileStorageService<?> srv = new LoggingFileStorageServiceWrapper<>(new InMemoryFileStorageServiceImpl<>(
+        final FileStorageService<?> srv = new InMemoryFileStorageServiceImpl<>(
                 (FileStorageIdService<?>) idService.getDeclaredConstructor().newInstance()
-        ));
-        beanDefinition.setInstanceSupplier(() -> srv);
+        );
+        beanDefinition.setInstanceSupplier(() -> wrap(srv, config));
     }
 
     /**
@@ -222,11 +275,11 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                     PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "system.root-location");
         }
         beanDefinition.setBeanClass(SystemFileStorageServiceImpl.class);
-        final FileStorageService<?> srv = new LoggingFileStorageServiceWrapper<>(new SystemFileStorageServiceImpl<>(
+        final FileStorageService<?> srv = new SystemFileStorageServiceImpl<>(
                 (FileStorageIdService<?>) idService.getDeclaredConstructor().newInstance(),
                 Path.of(config.getSystem().getRootLocation())
-        ));
-        beanDefinition.setInstanceSupplier(() -> srv);
+        );
+        beanDefinition.setInstanceSupplier(() -> wrap(srv, config));
     }
 
     /**
@@ -254,7 +307,7 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                     PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "sftp.root-directory");
         }
         beanDefinition.setBeanClass(SftpFileStorageServiceImpl.class);
-        final FileStorageService<?> srv = new LoggingFileStorageServiceWrapper<>(new SftpFileStorageServiceImpl<>(
+        final FileStorageService<?> srv = new SftpFileStorageServiceImpl<>(
                 (FileStorageIdService<?>) idService.getDeclaredConstructor().newInstance(),
                 config.getSftp().getRemoteHost(),
                 config.getSftp().getRemotePort(),
@@ -264,8 +317,8 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                 config.getSftp().getPassphrase(),
                 config.getSftp().getRootDirectory(),
                 config.getSftp().getConfigProperties()
-        ));
-        beanDefinition.setInstanceSupplier(() -> srv);
+        );
+        beanDefinition.setInstanceSupplier(() -> wrap(srv, config));
     }
 
     /**
@@ -281,12 +334,12 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                     PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "s3.bucket-name");
         }
         beanDefinition.setBeanClass(S3FileStorageServiceImpl.class);
-        final FileStorageService<?> srv = new LoggingFileStorageServiceWrapper<>(new S3FileStorageServiceImpl<>(
+        final FileStorageService<?> srv = new S3FileStorageServiceImpl<>(
                 (FileStorageIdService<?>) idService.getDeclaredConstructor().newInstance(),
                 context.getBean(S3Client.class),
                 config.getS3().getBucketName()
-        ));
-        beanDefinition.setInstanceSupplier(() -> srv);
+        );
+        beanDefinition.setInstanceSupplier(() -> wrap(srv, config));
     }
 
     /**
@@ -302,37 +355,56 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                     PREFIX + PROPERTY_NAME_PORTION.formatted(key) + "gcs.bucket-name");
         }
         beanDefinition.setBeanClass(GcsFileStorageServiceImpl.class);
-        final FileStorageService<?> srv = new LoggingFileStorageServiceWrapper<>(new GcsFileStorageServiceImpl<>(
+        final FileStorageService<?> srv = new GcsFileStorageServiceImpl<>(
                 (FileStorageIdService<?>) idService.getDeclaredConstructor().newInstance(),
                 context.getBean(Storage.class),
                 config.getGcs().getBucketName()
-        ));
-        beanDefinition.setInstanceSupplier(() -> srv);
+        );
+        beanDefinition.setInstanceSupplier(() -> wrap(srv, config));
     }
 
     /**
      * Generates file storage service for Azure based on provided config and idService
      */
     private void createFileStorageServiceAzure(final GenericBeanDefinition beanDefinition,
-                                               final Class<?> idService) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+                                               final Class<?> idService,
+                                               final FileStorageProperties.FileStorageConfig config) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         beanDefinition.setBeanClass(AzureFileStorageServiceImpl.class);
-        final FileStorageService<?> srv = new LoggingFileStorageServiceWrapper<>(new AzureFileStorageServiceImpl<>(
+        final FileStorageService<?> srv = new AzureFileStorageServiceImpl<>(
                 (FileStorageIdService<?>) idService.getDeclaredConstructor().newInstance(),
                 context.getBean(BlobContainerClient.class)
-        ));
-        beanDefinition.setInstanceSupplier(() -> srv);
+        );
+        beanDefinition.setInstanceSupplier(() -> wrap(srv, config));
     }
 
     /**
      * Generates file storage service for HDFS based on provided config and idService
      */
     private void createFileStorageServiceHdfs(final GenericBeanDefinition beanDefinition,
-                                              final Class<?> idService) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+                                              final Class<?> idService,
+                                              final FileStorageProperties.FileStorageConfig config) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         beanDefinition.setBeanClass(HdfsFileStorageServiceImpl.class);
-        final FileStorageService<?> srv = new LoggingFileStorageServiceWrapper<>(new HdfsFileStorageServiceImpl<>(
+        final FileStorageService<?> srv = new HdfsFileStorageServiceImpl<>(
                 (FileStorageIdService<?>) idService.getDeclaredConstructor().newInstance(),
                 context.getBean(FileSystem.class)
-        ));
-        beanDefinition.setInstanceSupplier(() -> srv);
+        );
+        beanDefinition.setInstanceSupplier(() -> wrap(srv, config));
+    }
+
+    /**
+     * Composes the final storage service by applying a chain of wrappers in a specific order.
+     * This method orchestrates the layering of service functionality:
+     * <ol>
+     *     <li>Applies encryption wrapping if configured (Layer 2).</li>
+     *     <li>Applies logging wrapping (Layer 3).</li>
+     * </ol>
+     *
+     * @param srv    The base storage service to be decorated
+     * @param config The configuration properties defining which layers to apply
+     * @return A decorated storage service instance incorporating encryption and logging
+     */
+    private FileStorageService<?> wrap(final FileStorageService<?> srv, final FileStorageProperties.FileStorageConfig config) {
+        final FileStorageService<?> srvLevelTwo = maybeWrapWithEncryption(srv, config);
+        return wrapWithLogging(srvLevelTwo);
     }
 }

@@ -21,11 +21,17 @@ import java.util.Properties;
  * # idService should implement com.temesoft.fs.FileStorageIdService&lt;Widget&gt;
  * app.file-storage.instances.widget-mem.id-service=org.some.where.WidgetFileStorageIdService
  *
+ * # Using encryption
  * app.file-storage.instances.trinket-sys.type=System
  * app.file-storage.instances.trinket-sys.bean-qualifier=trinketSysFileStorage
  * app.file-storage.instances.trinket-sys.entity-class=org.some.where.Trinket
  * app.file-storage.instances.trinket-sys.id-service=org.some.where.TrinketFileStorageIdService
  * app.file-storage.instances.trinket-sys.system.rootLocation=/tmp/test-file-storage
+ * app.file-storage.instances.trinket-sys.encryption.enabled=true
+ * app.file-storage.instances.trinket-sys.encryption.algorithm=AES_GCM_CHUNKED
+ * app.file-storage.instances.trinket-sys.encryption.chunk-size=65536
+ * app.file-storage.instances.trinket-sys.encryption.key-id=main
+ * app.file-storage.instances.trinket-sys.encryption.base64-key=V3dYQjZ2cWJ5QjVyR0t3Y0tVS2N6N0pqZGRxNzR2cVg=
  *
  * app.file-storage.instances.trinket-sftp.type=Sftp
  * app.file-storage.instances.trinket-sftp.bean-qualifier=trinketSftpFileStorage
@@ -39,12 +45,18 @@ import java.util.Properties;
  * # Additional configuration for jsch sftp (for example "StrictHostKeyChecking=no")
  * app.file-storage.instances.trinket-sftp.sftp.config-properties.StrictHostKeyChecking=no
  *
+ * # S3 integration uses encryption
  * # S3 integration will require a bean software.amazon.awssdk.services.s3.S3Client
  * app.file-storage.instances.trinket-s3.type=S3
  * app.file-storage.instances.trinket-s3.entity-class=org.some.where.Trinket
  * app.file-storage.instances.trinket-s3.id-service=org.some.where.TrinketFileStorageIdService
  * app.file-storage.instances.trinket-s3.bean-qualifier=trinketS3FileStorage
  * app.file-storage.instances.trinket-s3.s3.bucket-name=test-bucket
+ * app.file-storage.instances.trinket-s3.encryption.enabled=true
+ * app.file-storage.instances.trinket-s3.encryption.algorithm=AES_GCM_CHUNKED
+ * app.file-storage.instances.trinket-s3.encryption.chunk-size=65536
+ * app.file-storage.instances.trinket-s3.encryption.key-id=main
+ * app.file-storage.instances.trinket-s3.encryption.base64-key=V3dYQjZ2cWJ5QjVyR0t3Y0tVS2N6N0pqZGRxNzR2cVg=
  *
  * # GCS integration will require a bean com.google.cloud.storage.Storage
  * app.file-storage.instances.trinket-gcs.type=GCS
@@ -108,6 +120,7 @@ public class FileStorageProperties {
         private String idService;
         private FileStorageOption type;
         private String beanQualifier;
+        private EncryptionProperties encryption = new EncryptionProperties();
 
         private SystemFileStorageProperties system = new SystemFileStorageProperties();
         private SftpFileStorageProperties sftp = new SftpFileStorageProperties();
@@ -176,6 +189,14 @@ public class FileStorageProperties {
 
         public void setGcs(final GcsFileStorageProperties gcs) {
             this.gcs = gcs;
+        }
+
+        public EncryptionProperties getEncryption() {
+            return encryption;
+        }
+
+        public void setEncryption(final EncryptionProperties encryption) {
+            this.encryption = encryption;
         }
     }
 
@@ -291,6 +312,74 @@ public class FileStorageProperties {
 
         public void setBucketName(final String bucketName) {
             this.bucketName = bucketName;
+        }
+    }
+
+    public static class EncryptionProperties {
+
+        /**
+         * Enable transparent encryption wrapper.
+         */
+        private boolean enabled = false;
+
+        /**
+         * Currently supported: AES_GCM_CHUNKED
+         */
+        private String algorithm = "AES_GCM_CHUNKED";
+
+        /**
+         * Plaintext chunk size in bytes.
+         */
+        private int chunkSize = 65536;
+
+        /**
+         * Key identifier stored in encrypted header.
+         */
+        private String keyId = "default";
+
+        /**
+         * Base64-encoded AES key (128/192/256 bit).
+         */
+        private String base64Key;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(final boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getAlgorithm() {
+            return algorithm;
+        }
+
+        public void setAlgorithm(final String algorithm) {
+            this.algorithm = algorithm;
+        }
+
+        public int getChunkSize() {
+            return chunkSize;
+        }
+
+        public void setChunkSize(final int chunkSize) {
+            this.chunkSize = chunkSize;
+        }
+
+        public String getKeyId() {
+            return keyId;
+        }
+
+        public void setKeyId(final String keyId) {
+            this.keyId = keyId;
+        }
+
+        public String getBase64Key() {
+            return base64Key;
+        }
+
+        public void setBase64Key(final String base64Key) {
+            this.base64Key = base64Key;
         }
     }
 }
