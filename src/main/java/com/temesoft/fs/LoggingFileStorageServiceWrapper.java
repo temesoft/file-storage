@@ -9,7 +9,7 @@ import java.io.InputStream;
  * Wrapper implementation of {@link FileStorageService} class providing debug logging, taking as constructor argument
  * actual underlying {@link FileStorageService} implementation
  */
-public class LoggingFileStorageServiceWrapper<T> implements FileStorageService<T> {
+public class LoggingFileStorageServiceWrapper<T> implements FileStorageServiceWrapper<T> {
 
     private final Logger logger;
     private final FileStorageService<T> service;
@@ -22,6 +22,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageService<T
     /**
      * Returns {@link FileStorageService} used in this wrapper as underlying implementation
      */
+    @Override
     public FileStorageService<T> getService() {
         return service;
     }
