@@ -303,11 +303,6 @@ app.file-storage.instances.trinket-hdfs.azure.bucket-name=test-bucket
 #### Actuator Endpoint
 When enabled, the `/actuator/file-storage` endpoint provides a JSON view of all registered storage beans, their descriptions, and underlying implementations (unwrapping any decorators).
 
-```
-
-
--------
-
 ## Custom storage id usage
 
 Let's imagine that we have an entity `BookEntity` and it has fields like: `publishYear`, `publishMonth`, and `isbnNumber`
