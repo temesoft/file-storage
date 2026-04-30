@@ -12,10 +12,10 @@ import java.io.InputStream;
 public class LoggingFileStorageServiceWrapper<T> implements FileStorageServiceWrapper<T> {
 
     private final Logger logger;
-    private final FileStorageService<T> service;
+    private final FileStorageService<T> delegate;
 
     public LoggingFileStorageServiceWrapper(final FileStorageService<T> service) {
-        this.service = service;
+        this.delegate = service;
         logger = LoggerFactory.getLogger(service.getClass());
     }
 
@@ -24,7 +24,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageServiceWr
      */
     @Override
     public FileStorageService<T> getService() {
-        return service;
+        return delegate;
     }
 
     /**
@@ -36,7 +36,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageServiceWr
     @Override
     public boolean exists(final T id) throws FileStorageException {
         logger.debug("exists('{}')", id);
-        return service.exists(id);
+        return delegate.exists(id);
     }
 
     /**
@@ -48,7 +48,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageServiceWr
     @Override
     public boolean doesNotExist(final T id) throws FileStorageException {
         logger.debug("doesNotExist('{}')", id);
-        return !service.exists(id);
+        return !delegate.exists(id);
     }
 
     /**
@@ -61,7 +61,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageServiceWr
     @Override
     public long getSize(final T id) throws FileStorageException {
         logger.debug("getSize('{}')", id);
-        return service.getSize(id);
+        return delegate.getSize(id);
     }
 
     /**
@@ -74,7 +74,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageServiceWr
     @Override
     public void create(final T id, final byte[] bytes) throws FileStorageException {
         logger.debug("create('{}', {} bytes)", id, bytes.length);
-        service.create(id, bytes);
+        delegate.create(id, bytes);
     }
 
     /**
@@ -88,7 +88,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageServiceWr
     @Override
     public void create(final T id, final InputStream inputStream, final long contentSize) throws FileStorageException {
         logger.debug("create('{}', {}, {})", id, inputStream, contentSize);
-        service.create(id, inputStream, contentSize);
+        delegate.create(id, inputStream, contentSize);
     }
 
     /**
@@ -100,7 +100,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageServiceWr
     @Override
     public void delete(final T id) throws FileStorageException {
         logger.debug("delete('{}')", id);
-        service.delete(id);
+        delegate.delete(id);
     }
 
     /**
@@ -113,7 +113,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageServiceWr
     @Override
     public byte[] getBytes(final T id) throws FileStorageException {
         logger.debug("getBytes('{}')", id);
-        return service.getBytes(id);
+        return delegate.getBytes(id);
     }
 
     /**
@@ -128,7 +128,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageServiceWr
     @Override
     public byte[] getBytes(final T id, final long startPosition, final long endPosition) throws FileStorageException {
         logger.debug("getBytes('{}', {}, {})", id, startPosition, endPosition);
-        return service.getBytes(id, startPosition, endPosition);
+        return delegate.getBytes(id, startPosition, endPosition);
     }
 
     /**
@@ -141,7 +141,7 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageServiceWr
     @Override
     public InputStream getInputStream(final T id) throws FileStorageException {
         logger.debug("getInputStream('{}')", id);
-        return service.getInputStream(id);
+        return delegate.getInputStream(id);
     }
 
     /**
@@ -152,7 +152,15 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageServiceWr
     @Override
     public void deleteAll() throws FileStorageException {
         logger.debug("deleteAll()");
-        service.deleteAll();
+        delegate.deleteAll();
+    }
+
+    /**
+     * Describes the wrapper and storage type of implementation
+     */
+    @Override
+    public String getStorageDescription() {
+        return "Logging(" + delegate.getStorageDescription() + ")";
     }
 
     /**
@@ -160,6 +168,6 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageServiceWr
      */
     @Override
     public FileStorageIdService<T> getFileStorageIdService() {
-        return service.getFileStorageIdService();
+        return delegate.getFileStorageIdService();
     }
 }

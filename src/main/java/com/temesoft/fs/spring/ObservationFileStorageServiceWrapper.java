@@ -40,7 +40,8 @@ public class ObservationFileStorageServiceWrapper<T> implements FileStorageServi
 
     public ObservationFileStorageServiceWrapper(final FileStorageService<T> delegate) {
         this.delegate = delegate;
-        this.storageType = delegate.getStorageDescription().toLowerCase(Locale.ROOT).replace(" ", "-");
+        this.storageType = FileStorageServiceWrapper.unwrap(delegate).getStorageDescription()
+                .toLowerCase(Locale.ROOT).replace(" ", "-");
     }
 
     @Override
@@ -96,6 +97,14 @@ public class ObservationFileStorageServiceWrapper<T> implements FileStorageServi
     @Override
     public FileStorageIdService<T> getFileStorageIdService() {
         return delegate.getFileStorageIdService();
+    }
+
+    /**
+     * Describes the wrapper and storage type of implementation
+     */
+    @Override
+    public String getStorageDescription() {
+        return "Observation(" + delegate.getStorageDescription() + ")";
     }
 
     /**

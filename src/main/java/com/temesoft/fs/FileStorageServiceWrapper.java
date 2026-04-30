@@ -1,5 +1,6 @@
 package com.temesoft.fs;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,11 +20,6 @@ public interface FileStorageServiceWrapper<T> extends FileStorageService<T> {
      * @return The next {@link FileStorageService} in the decoration chain.
      */
     FileStorageService<T> getService();
-
-    @Override
-    default String getStorageDescription() {
-        return getService().getStorageDescription();
-    }
 
     /**
      * Unwraps a potentially decorated service to find the base implementation at the
@@ -61,5 +57,62 @@ public interface FileStorageServiceWrapper<T> extends FileStorageService<T> {
             current = wrapper.getService();
         }
         return result;
+    }
+
+    /* Below are the default methods using delegate */
+
+    @Override
+    default String getStorageDescription() {
+        return getService().getStorageDescription();
+    }
+
+    @Override
+    default boolean exists(T id) throws FileStorageException {
+        return getService().exists(id);
+    }
+
+    @Override
+    default long getSize(T id) throws FileStorageException {
+        return getService().getSize(id);
+    }
+
+    @Override
+    default void create(T id, byte[] bytes) throws FileStorageException {
+        getService().create(id, bytes);
+    }
+
+    @Override
+    default void create(T id, InputStream inputStream, long contentSize) throws FileStorageException {
+        getService().create(id, inputStream, contentSize);
+    }
+
+    @Override
+    default void delete(T id) throws FileStorageException {
+        getService().delete(id);
+    }
+
+    @Override
+    default byte[] getBytes(T id) throws FileStorageException {
+        return getService().getBytes(id);
+    }
+
+    @Override
+    default byte[] getBytes(T id, long startPosition, long endPosition) throws FileStorageException {
+        return getService().getBytes(id, startPosition, endPosition);
+    }
+
+    @Override
+    default InputStream getInputStream(T id) throws FileStorageException {
+        return getService().getInputStream(id);
+    }
+
+    @Override
+    default void deleteAll() throws FileStorageException {
+        getService().deleteAll();
+    }
+
+    @Override
+    default FileStorageIdService<T> getFileStorageIdService() {
+        return getService().getFileStorageIdService();
     }
 }

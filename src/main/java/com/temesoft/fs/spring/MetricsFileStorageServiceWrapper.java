@@ -47,8 +47,8 @@ public class MetricsFileStorageServiceWrapper<T> implements FileStorageServiceWr
 
     public MetricsFileStorageServiceWrapper(final FileStorageService<T> delegate) {
         this.delegate = delegate;
-        this.metricPrefix = "file.storage." +
-                delegate.getStorageDescription().toLowerCase(Locale.ROOT).replace(" ", "-");
+        this.metricPrefix = "file.storage." + FileStorageServiceWrapper.unwrap(delegate).getStorageDescription()
+                .toLowerCase(Locale.ROOT).replace(" ", "-");
     }
 
     @Override
@@ -104,6 +104,14 @@ public class MetricsFileStorageServiceWrapper<T> implements FileStorageServiceWr
     @Override
     public FileStorageIdService<T> getFileStorageIdService() {
         return delegate.getFileStorageIdService();
+    }
+
+    /**
+     * Describes the wrapper and storage type of implementation
+     */
+    @Override
+    public String getStorageDescription() {
+        return "Metrics(" + delegate.getStorageDescription() + ")";
     }
 
     private <R> R record(final StorageSupplier<R> supplier, final String operation) throws FileStorageException {
