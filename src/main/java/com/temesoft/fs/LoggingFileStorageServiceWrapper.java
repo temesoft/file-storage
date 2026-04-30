@@ -156,14 +156,6 @@ public class LoggingFileStorageServiceWrapper<T> implements FileStorageServiceWr
     }
 
     /**
-     * Describes the storage type of implementation
-     */
-    @Override
-    public String getStorageDescription() {
-        return service.getStorageDescription();
-    }
-
-    /**
      * Returns id service used in this file storage service
      */
     @Override

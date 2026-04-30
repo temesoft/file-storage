@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -20,6 +21,8 @@ import java.util.Properties;
  * app.file-storage.instances.widget-mem.entity-class=org.some.where.Widget
  * # idService should implement com.temesoft.fs.FileStorageIdService&lt;Widget&gt;
  * app.file-storage.instances.widget-mem.id-service=org.some.where.WidgetFileStorageIdService
+ * # Optionally additional wrappers can be added. For example for Metrics and Observation
+ * app.file-storage.instances.widget-mem.custom-wrappers=com.temesoft.fs.spring.MetricsFileStorageServiceWrapper,com.temesoft.fs.spring.ObservationFileStorageServiceWrapper
  *
  * # Using encryption
  * app.file-storage.instances.trinket-sys.type=System
@@ -120,6 +123,7 @@ public class FileStorageProperties {
         private String idService;
         private FileStorageOption type;
         private String beanQualifier;
+        private List<String> customWrappers;
         private EncryptionProperties encryption = new EncryptionProperties();
 
         private SystemFileStorageProperties system = new SystemFileStorageProperties();
@@ -157,6 +161,14 @@ public class FileStorageProperties {
 
         public void setBeanQualifier(final String beanQualifier) {
             this.beanQualifier = beanQualifier;
+        }
+
+        public List<String> getCustomWrappers() {
+            return customWrappers;
+        }
+
+        public void setCustomWrappers(final List<String> customWrappers) {
+            this.customWrappers = customWrappers;
         }
 
         public SystemFileStorageProperties getSystem() {

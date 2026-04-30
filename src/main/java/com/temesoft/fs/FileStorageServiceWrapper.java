@@ -17,6 +17,11 @@ public interface FileStorageServiceWrapper<T> extends FileStorageService<T> {
      */
     FileStorageService<T> getService();
 
+    @Override
+    default String getStorageDescription() {
+        return getService().getStorageDescription();
+    }
+
     /**
      * Unwraps a potentially decorated service to find the base implementation at the
      * bottom of the stack.
