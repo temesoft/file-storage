@@ -54,7 +54,7 @@
 <dependency>
     <groupId>io.github.temesoft</groupId>
     <artifactId>file-storage</artifactId>
-    <version>1.9</version>
+    <version>1.10</version>
 </dependency>
 ```
 
@@ -63,7 +63,7 @@
 ## Gradle dependency
 
 ```gradle
-testImplementation 'io.github.temesoft:file-storage:1.9'
+testImplementation 'io.github.temesoft:file-storage:1.10'
 ```
 
 -------
