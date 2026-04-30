@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.temesoft.fs.FileStorageServiceWrapper.listWrappers;
 import static com.temesoft.fs.spring.FileStorageProperties.PREFIX;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.springframework.beans.factory.config.BeanDefinition.SCOPE_SINGLETON;
@@ -56,6 +57,7 @@ import static org.springframework.util.ObjectUtils.isEmpty;
 /**
  * Configuration class setting up a bean registry approach to creating one or more beans {@link FileStorageService}
  * specified by configuration defined in {@link FileStorageProperties}.
+ * Registers custom actuator endpoint describing file storage beans registered.
  */
 @Configuration
 public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegistryPostProcessor, EnvironmentAware, ApplicationContextAware {
@@ -119,7 +121,8 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                                 Map.of(
                                         "description", entry.getValue().getStorageDescription(),
                                         "storageService", serviceClassName,
-                                        "idService", entry.getValue().getFileStorageIdService().getClass().getName()
+                                        "idService", entry.getValue().getFileStorageIdService().getClass().getName(),
+                                        "wrapperLayers", listWrappers(entry.getValue())
                                 )
                         );
                     }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
