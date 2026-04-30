@@ -19,7 +19,7 @@ import java.util.Locale;
  * (e.g., create, delete, exists) using {@link Timer} samples. Metrics are dynamically
  * named based on the underlying storage implementation's description.
  *
- * <p><strong>Metric Naming & Tagging:</strong>
+ * <p><strong>Metric Naming &amp; Tagging:</strong>
  * <ul>
  *     <li><strong>Metric Name:</strong> {@code file.storage.<description>} (where spaces in
  *         the description are replaced with dashes).</li>
