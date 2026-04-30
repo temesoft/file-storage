@@ -8,7 +8,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 class EncryptingFileStorageServiceWrapperTest {
 
-    final FileStorageService<UUID>  fileStorageService = new InMemoryFileStorageServiceImpl<>(UUIDFileStorageId::new);
+    final FileStorageService<UUID> fileStorageService = new InMemoryFileStorageServiceImpl<>(UUIDFileStorageId::new);
     final FileStorageCryptor fileStorageCryptor = new AesGcmChunkedFileStorageCryptor("test", "V3dYQjZ2cWJ5QjVyR0t3Y0tVS2N6N0pqZGRxNzR2cVg=");
 
     @Test

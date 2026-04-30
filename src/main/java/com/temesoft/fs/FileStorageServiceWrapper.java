@@ -1,5 +1,8 @@
 package com.temesoft.fs;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * A decorator interface for {@link FileStorageService} that allows for layering additional
  * functionality (such as encryption, logging, or caching) over a base storage implementation.
@@ -17,6 +20,11 @@ public interface FileStorageServiceWrapper<T> extends FileStorageService<T> {
      */
     FileStorageService<T> getService();
 
+    @Override
+    default String getStorageDescription() {
+        return getService().getStorageDescription();
+    }
+
     /**
      * Unwraps a potentially decorated service to find the base implementation at the
      * bottom of the stack.
@@ -32,5 +40,26 @@ public interface FileStorageServiceWrapper<T> extends FileStorageService<T> {
             current = wrapper.getService();
         }
         return current;
+    }
+
+    /**
+     * Traverses the decoration chain of a {@link FileStorageService} and returns a list
+     * of all applied wrapper class names.
+     * This method starts from the outermost wrapper and moves down the stack until it
+     * reaches the base implementation. Each encountered wrapper that implements
+     * {@link FileStorageServiceWrapper} has its fully qualified class name added to the list.
+     *
+     * @param service The potentially decorated service to inspect.
+     * @return An ordered {@link List} of class names representing the wrapper stack,
+     * ordered from outermost to innermost.
+     */
+    static List<String> listWrappers(final FileStorageService<?> service) {
+        final List<String> result = new ArrayList<>();
+        FileStorageService<?> current = service;
+        while (current instanceof FileStorageServiceWrapper<?> wrapper) {
+            result.add(wrapper.getClass().getName());
+            current = wrapper.getService();
+        }
+        return result;
     }
 }

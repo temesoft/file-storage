@@ -22,6 +22,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.support.AutowireCandidateQualifier;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
@@ -39,6 +40,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.AbstractMap;
@@ -46,13 +48,16 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.temesoft.fs.FileStorageServiceWrapper.listWrappers;
 import static com.temesoft.fs.spring.FileStorageProperties.PREFIX;
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.springframework.beans.factory.config.BeanDefinition.SCOPE_SINGLETON;
 import static org.springframework.util.ObjectUtils.isEmpty;
 
 /**
  * Configuration class setting up a bean registry approach to creating one or more beans {@link FileStorageService}
  * specified by configuration defined in {@link FileStorageProperties}.
+ * Registers custom actuator endpoint describing file storage beans registered.
  */
 @Configuration
 public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegistryPostProcessor, EnvironmentAware, ApplicationContextAware {
@@ -65,6 +70,8 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
     private static final String GENERATING_MESSAGE = "Generating {} {} bean(s)";
     private static final String PROPERTY_NAME_PORTION = ".instances.%s.";
 
+    private AutowireCapableBeanFactory beanFactory;
+
     private ApplicationContext context;
     private Environment environment;
 
@@ -76,6 +83,7 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
     @Override
     public void setApplicationContext(final ApplicationContext ctx) throws BeansException {
         this.context = ctx;
+        this.beanFactory = ctx.getAutowireCapableBeanFactory();
     }
 
     /**
@@ -113,7 +121,8 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
                                 Map.of(
                                         "description", entry.getValue().getStorageDescription(),
                                         "storageService", serviceClassName,
-                                        "idService", entry.getValue().getFileStorageIdService().getClass().getName()
+                                        "idService", entry.getValue().getFileStorageIdService().getClass().getName(),
+                                        "wrapperLayers", listWrappers(entry.getValue())
                                 )
                         );
                     }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -392,19 +401,33 @@ public class FileStorageBeanRegistryConfiguration implements BeanDefinitionRegis
     }
 
     /**
-     * Composes the final storage service by applying a chain of wrappers in a specific order.
-     * This method orchestrates the layering of service functionality:
-     * <ol>
-     *     <li>Applies encryption wrapping if configured (Layer 2).</li>
-     *     <li>Applies logging wrapping (Layer 3).</li>
-     * </ol>
+     * Wraps a {@link FileStorageService} with additional layers of functionality based on configuration.
+     * This method applies encryption (if configured), logging, and any custom wrappers specified
+     * in the storage configuration. Custom wrappers must provide a constructor that accepts
+     * a single {@code FileStorageService} argument.
      *
-     * @param srv    The base storage service to be decorated
-     * @param config The configuration properties defining which layers to apply
-     * @return A decorated storage service instance incorporating encryption and logging
+     * @param srv    The base {@code FileStorageService} to be wrapped.
+     * @param config The configuration containing encryption settings and custom wrapper class names.
+     * @return A decorated {@code FileStorageService} with all requested layers applied.
+     * @throws RuntimeException if a custom wrapper class cannot be instantiated or found.
      */
-    private FileStorageService<?> wrap(final FileStorageService<?> srv, final FileStorageProperties.FileStorageConfig config) {
-        final FileStorageService<?> srvLevelTwo = maybeWrapWithEncryption(srv, config);
-        return wrapWithLogging(srvLevelTwo);
+    private FileStorageService<?> wrap(final FileStorageService<?> srv,
+                                       final FileStorageProperties.FileStorageConfig config) {
+        FileStorageService<?> decoratedSrv = maybeWrapWithEncryption(srv, config);
+        decoratedSrv = wrapWithLogging(decoratedSrv);
+        if (isNotEmpty(config.getCustomWrappers())) {
+            for (final String className : config.getCustomWrappers()) {
+                try {
+                    final Class<?> clazz = Class.forName(className);
+                    final Constructor<?> constructor = clazz.getConstructor(FileStorageService.class);
+                    decoratedSrv = (FileStorageService<?>) constructor.newInstance(decoratedSrv);
+                    beanFactory.autowireBean(decoratedSrv);
+                    beanFactory.initializeBean(decoratedSrv, className);
+                } catch (ReflectiveOperationException e) {
+                    throw new RuntimeException("Failed to instantiate custom wrapper: " + className, e);
+                }
+            }
+        }
+        return decoratedSrv;
     }
 }

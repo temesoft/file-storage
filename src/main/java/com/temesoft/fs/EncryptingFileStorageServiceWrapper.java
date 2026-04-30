@@ -192,11 +192,6 @@ public class EncryptingFileStorageServiceWrapper<T> implements FileStorageServic
     }
 
     @Override
-    public String getStorageDescription() {
-        return "Encrypted(" + service.getStorageDescription() + ")";
-    }
-
-    @Override
     public FileStorageIdService getFileStorageIdService() {
         return service.getFileStorageIdService();
     }

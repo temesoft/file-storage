@@ -20,6 +20,7 @@
 - Transparent Data Encryption (AES-GCM chunked encryption layer)
 - Service Layering (Decorator pattern for adding logging, encryption, etc.)
 - Spring-Boot integration with programmatic and property based configuration
+- Optional decorators/wrappers for Metrics and Observation
 - Slf4j logging wrapper for detailed debug output
 - Easy integration interface:
     - [FileStorageService](src/main/java/com/temesoft/fs/FileStorageService.java)
@@ -32,17 +33,18 @@
 
 ### Supported Storage Implementations
 
-| Storage Type | Library / SDK | Notes                                |
-|---------------|----------------|--------------------------------------|
-| **Local File System** | `java.nio` | Simple local persistence             |
-| **Amazon AWS S3** | AWS SDK v2.x | AWS S3 cloud-native storage          |
-| **Google Cloud Storage (GCS)** | GCS SDK v2.x | GCP GCS cloud-native storage         |
-| **Azure Blob Storage** | `azure-storage-blob v12.x` | Azure cloud-native storage   |
-| **SFTP** | `jsch v0.2.x` | Remote secure file transfer          |
-| **HDFS** | Hadoop v3.x | Distributed file system support      |
-| **In-memory** | `ConcurrentHashMap` | Great for testing and ephemeral data |
-| **Encryption Layer** | `AES-GCM` | Transparent chunked encryption wrapper |
-
+| Storage Type                   | Library / SDK              | Notes                                  |
+|--------------------------------|----------------------------|----------------------------------------|
+| **Local File System**          | `java.nio`                 | Simple local persistence               |
+| **Amazon AWS S3**              | AWS SDK v2.x               | AWS S3 cloud-native storage            |
+| **Google Cloud Storage (GCS)** | GCS SDK v2.x               | GCP GCS cloud-native storage           |
+| **Azure Blob Storage**         | `azure-storage-blob v12.x` | Azure cloud-native storage             |
+| **SFTP**                       | `jsch v0.2.x`              | Remote secure file transfer            |
+| **HDFS**                       | Hadoop v3.x                | Distributed file system support        |
+| **In-memory**                  | `ConcurrentHashMap`        | Great for testing and ephemeral data   |
+| **Encryption Layer**           | `AES-GCM`                  | Transparent chunked encryption wrapper |
+| **Metrics Layer**              | `Micrometer`               | Optional metrics wrapper               |
+| **Observation Layer**          | `Micrometer`               | Optional observation wrapper           |
 
 ------
 
@@ -52,7 +54,7 @@
 <dependency>
     <groupId>io.github.temesoft</groupId>
     <artifactId>file-storage</artifactId>
-    <version>1.9</version>
+    <version>1.10</version>
 </dependency>
 ```
 
@@ -61,7 +63,7 @@
 ## Gradle dependency
 
 ```gradle
-testImplementation 'io.github.temesoft:file-storage:1.9'
+testImplementation 'io.github.temesoft:file-storage:1.10'
 ```
 
 -------
@@ -182,6 +184,21 @@ FileStorageService<UUID> fileStorageService = new LoggingFileStorageServiceWrapp
 );
 
 ```
+Log output example using service setup from above, for all methods defined in [FileStorageService](src/main/java/com/temesoft/fs/FileStorageService.java):
+```
+thread=main level=DEBUG exists('0e3d3454-1d4f-42ac-a07a-8df859226119')
+thread=main level=DEBUG doesNotExist('0e3d3454-1d4f-42ac-a07a-8df859226119')
+thread=main level=DEBUG getSize('0e3d3454-1d4f-42ac-a07a-8df859226119')
+thread=main level=DEBUG delete('0e3d3454-1d4f-42ac-a07a-8df859226119')
+thread=main level=DEBUG create('0e3d3454-1d4f-42ac-a07a-8df859226119', 1024 bytes)
+thread=main level=DEBUG delete('0e3d3454-1d4f-42ac-a07a-8df859226119')
+thread=main level=DEBUG create('0e3d3454-1d4f-42ac-a07a-8df859226119', java.io.ByteArrayInputStream@17063c32, 1024)
+thread=main level=DEBUG getBytes('0e3d3454-1d4f-42ac-a07a-8df859226119')
+thread=main level=DEBUG getBytes('0e3d3454-1d4f-42ac-a07a-8df859226119', 123, 456)
+thread=main level=DEBUG getInputStream('0e3d3454-1d4f-42ac-a07a-8df859226119')
+thread=main level=DEBUG delete('0e3d3454-1d4f-42ac-a07a-8df859226119')
+thread=main level=DEBUG deleteAll()
+```
 
 ### Transparent Encryption Wrapper
 Provides data-at-rest protection using **AES-GCM** with chunked processing via [EncryptingFileStorageServiceWrapper](src/main/java/com/temesoft/fs/EncryptingFileStorageServiceWrapper.java).
@@ -204,20 +221,44 @@ FileStorageService<UUID> encryptedStorage = new EncryptingFileStorageServiceWrap
 - **Header:** Metadata including version, algorithm, chunk size, original size, and key ID.
 - **Chunks:** Each chunk is stored as `[12-byte Nonce][Ciphertext][16-byte GCM Tag]`.
 
-Log output example using service setup from above, for all methods defined in [FileStorageService](src/main/java/com/temesoft/fs/FileStorageService.java):
+
+### Metrics Wrapper
+A decorator that records operational metrics using Micrometer. It captures execution time and frequency for all storage operations.
+
+```java
+FileStorageService<UUID> metricsStorage = new MetricsFileStorageServiceWrapper<>(
+        new InMemoryFileStorageServiceImpl<>(UUIDFileStorageId::new)
+);
+// setRegistry(...) method is annotated with @Autowired in case metricsStorage will be a bean
+metricsStorage.setRegistry(meterRegistry);
+// Metrics will be available under 'file.storage.<implementation-name>'
 ```
-thread=main level=DEBUG exists('0e3d3454-1d4f-42ac-a07a-8df859226119')
-thread=main level=DEBUG doesNotExist('0e3d3454-1d4f-42ac-a07a-8df859226119')
-thread=main level=DEBUG getSize('0e3d3454-1d4f-42ac-a07a-8df859226119')
-thread=main level=DEBUG delete('0e3d3454-1d4f-42ac-a07a-8df859226119')
-thread=main level=DEBUG create('0e3d3454-1d4f-42ac-a07a-8df859226119', 1024 bytes)
-thread=main level=DEBUG delete('0e3d3454-1d4f-42ac-a07a-8df859226119')
-thread=main level=DEBUG create('0e3d3454-1d4f-42ac-a07a-8df859226119', java.io.ByteArrayInputStream@17063c32, 1024)
-thread=main level=DEBUG getBytes('0e3d3454-1d4f-42ac-a07a-8df859226119')
-thread=main level=DEBUG getBytes('0e3d3454-1d4f-42ac-a07a-8df859226119', 123, 456)
-thread=main level=DEBUG getInputStream('0e3d3454-1d4f-42ac-a07a-8df859226119')
-thread=main level=DEBUG delete('0e3d3454-1d4f-42ac-a07a-8df859226119')
-thread=main level=DEBUG deleteAll()
+
+### Observation Wrapper
+Provides comprehensive observability using Micrometer Observation API, including metrics, distributed tracing 
+(e.g., Brave, OpenTelemetry, etc.), and correlated logging.
+
+```java
+FileStorageService<UUID> observedStorage = new ObservationFileStorageServiceWrapper<>(
+        new InMemoryFileStorageServiceImpl<>(UUIDFileStorageId::new)
+);
+// setObservationRegistry(...) method is annotated with @Autowired in case metricsStorage will be a bean
+observedStorage.setObservationRegistry(observationRegistry);
+```
+
+### User Defined Wrapper
+```java
+// User defined wrapper needs to implement FileStorageServiceWrapper 
+// and have a constructor taking FileStorageService
+public class CustomFileStorageServiceWrapper<T> implements FileStorageServiceWrapper<T> {
+
+    private final FileStorageService<T> delegate;
+
+    public CustomFileStorageServiceWrapper(final FileStorageService<T> delegate) {
+        this.delegate = delegate;
+    }
+    // TODO: Your custom code goes here...
+}
 ```
 
 -------
@@ -237,6 +278,12 @@ app.file-storage.instances.widget-mem.bean-qualifier=widgetFileStorage
 app.file-storage.instances.widget-mem.entity-class=org.some.where.Widget
 # idService should implement com.temesoft.fs.FileStorageIdService<Widget>
 app.file-storage.instances.widget-mem.id-service=org.some.where.WidgetFileStorageIdService
+# Additional custom wrappers can be added. 
+# They must implement FileStorageServiceWrapper and have a constructor taking FileStorageService
+app.file-storage.instances.widget-mem.custom-wrappers=\
+  com.temesoft.fs.spring.MetricsFileStorageServiceWrapper,\
+  com.temesoft.fs.spring.ObservationFileStorageServiceWrapper,\
+  com.company.YourCustomFileStorageServiceWrapper
 
 # Instance with Encryption enabled
 app.file-storage.instances.secure-sys.type=System
