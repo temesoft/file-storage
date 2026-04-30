@@ -27,7 +27,7 @@ import java.util.Objects;
  */
 public class EncryptingFileStorageServiceWrapper<T> implements FileStorageServiceWrapper<T> {
 
-    private final FileStorageService<T> service;
+    private final FileStorageService<T> delegate;
     private final FileStorageCryptor cryptor;
     private final int chunkSize;
 
@@ -36,7 +36,7 @@ public class EncryptingFileStorageServiceWrapper<T> implements FileStorageServic
             final FileStorageCryptor cryptor,
             final int chunkSize
     ) {
-        this.service = Objects.requireNonNull(service, "service must not be null");
+        this.delegate = Objects.requireNonNull(service, "service must not be null");
         this.cryptor = Objects.requireNonNull(cryptor, "cryptor must not be null");
         if (chunkSize <= 0) {
             throw new IllegalArgumentException("chunkSize must be > 0");
@@ -49,7 +49,7 @@ public class EncryptingFileStorageServiceWrapper<T> implements FileStorageServic
      */
     @Override
     public FileStorageService<T> getService() {
-        return service;
+        return delegate;
     }
 
     /**
@@ -57,7 +57,7 @@ public class EncryptingFileStorageServiceWrapper<T> implements FileStorageServic
      */
     @Override
     public boolean exists(final T id) throws FileStorageException {
-        return service.exists(id);
+        return delegate.exists(id);
     }
 
     /**
@@ -81,7 +81,7 @@ public class EncryptingFileStorageServiceWrapper<T> implements FileStorageServic
     public void create(final T id, final byte[] bytes) throws FileStorageException {
         Objects.requireNonNull(bytes, "bytes must not be null");
         final byte[] encrypted = encrypt(bytes);
-        service.create(id, encrypted);
+        delegate.create(id, encrypted);
     }
 
     /**
@@ -107,7 +107,7 @@ public class EncryptingFileStorageServiceWrapper<T> implements FileStorageServic
      */
     @Override
     public void delete(final T id) throws FileStorageException {
-        service.delete(id);
+        delegate.delete(id);
     }
 
     /**
@@ -115,7 +115,7 @@ public class EncryptingFileStorageServiceWrapper<T> implements FileStorageServic
      */
     @Override
     public byte[] getBytes(final T id) throws FileStorageException {
-        final byte[] encrypted = service.getBytes(id);
+        final byte[] encrypted = delegate.getBytes(id);
         return decrypt(encrypted);
     }
 
@@ -188,12 +188,20 @@ public class EncryptingFileStorageServiceWrapper<T> implements FileStorageServic
 
     @Override
     public void deleteAll() throws FileStorageException {
-        service.deleteAll();
+        delegate.deleteAll();
+    }
+
+    /**
+     * Describes the wrapper and storage type of implementation
+     */
+    @Override
+    public String getStorageDescription() {
+        return "Encrypted(" + delegate.getStorageDescription() + ")";
     }
 
     @Override
-    public FileStorageIdService getFileStorageIdService() {
-        return service.getFileStorageIdService();
+    public FileStorageIdService<T> getFileStorageIdService() {
+        return delegate.getFileStorageIdService();
     }
 
     /**
@@ -266,7 +274,7 @@ public class EncryptingFileStorageServiceWrapper<T> implements FileStorageServic
      * @return The parsed header.
      */
     private EncryptedFileHeader readHeader(final T id) {
-        final byte[] fixedHeader = service.getBytes(id, 0, EncryptedFileHeader.FIXED_PART_SIZE);
+        final byte[] fixedHeader = delegate.getBytes(id, 0, EncryptedFileHeader.FIXED_PART_SIZE);
         if (fixedHeader.length < EncryptedFileHeader.FIXED_PART_SIZE) {
             throw new FileStorageException("Stored encrypted file is too short to contain a valid header");
         }
@@ -274,7 +282,7 @@ public class EncryptingFileStorageServiceWrapper<T> implements FileStorageServic
         final int keyIdLength = ((fixedHeader[30] & 0xFF) << 8) | (fixedHeader[31] & 0xFF);
         final int totalHeaderSize = EncryptedFileHeader.FIXED_PART_SIZE + keyIdLength;
 
-        final byte[] fullHeader = service.getBytes(id, 0, totalHeaderSize);
+        final byte[] fullHeader = delegate.getBytes(id, 0, totalHeaderSize);
         if (fullHeader.length < totalHeaderSize) {
             throw new FileStorageException("Stored encrypted file header is incomplete");
         }
@@ -327,7 +335,7 @@ public class EncryptingFileStorageServiceWrapper<T> implements FileStorageServic
         }
         final long encryptedEnd = encryptedStart + encryptedChunkSize;
 
-        return service.getBytes(id, encryptedStart, encryptedEnd);
+        return delegate.getBytes(id, encryptedStart, encryptedEnd);
     }
 
     /**

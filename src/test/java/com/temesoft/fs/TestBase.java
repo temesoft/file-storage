@@ -4,7 +4,6 @@ import com.azure.storage.blob.BlobContainerClient;
 import com.google.cloud.storage.Storage;
 import org.apache.hadoop.fs.FileSystem;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.http.client.HttpClientAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,7 +16,7 @@ import static org.mockito.Mockito.mock;
  * This is a base class for all spring-boot integrated tests
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@SpringBootApplication(exclude = {HttpClientAutoConfiguration.class})
+@SpringBootApplication
 @TestPropertySource(properties = {"spring.main.banner-mode=off"})
 public class TestBase {
 
